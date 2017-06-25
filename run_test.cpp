@@ -20,23 +20,23 @@ int main() {
         // https://github.com/paesanilab/mbpol_openmm_plugin/blob/master/platforms/cuda/tests/TestCudaMBPolTwoBodyForce.cpp#L60
 
         posq[0].x = -1.516074336e+00; //[A]
-        posq[0].y = 2.023167650e-01;
+        posq[0].y = -2.023167650e-01;
         posq[0].z = 1.454672917e+00;
-        posq[1].x = 6.218989773e-01;
-        posq[1].y = 6.009430735e-01;
+        posq[1].x = -6.218989773e-01;
+        posq[1].y = -6.009430735e-01;
         posq[1].z = 1.572437625e+00;
-        posq[2].x = 2.017613812e+00;
-        posq[2].y = 4.190350349e-01;
+        posq[2].x = -2.017613812e+00;
+        posq[2].y = -4.190350349e-01;
         posq[2].z = 2.239642849e+00;
-        posq[3].x = 1.763651687e+00;
-        posq[3].y = 3.816594649e-01;
-        posq[3].z = 1.300353949e+00;
-        posq[4].x = 1.903851736e+00;
-        posq[4].y = 4.935677617e-01;
-        posq[4].z = 3.457810126e-01;
-        posq[5].x = 2.527904158e+00;
-        posq[5].y = 7.613550077e-01;
-        posq[5].z = 1.733803676e+00;
+        posq[3].x = -1.763651687e+00;
+        posq[3].y = -3.816594649e-01;
+        posq[3].z = -1.300353949e+00;
+        posq[4].x = -1.903851736e+00;
+        posq[4].y = -4.935677617e-01;
+        posq[4].z = -3.457810126e-01;
+        posq[5].x = -2.527904158e+00;
+        posq[5].y = -7.613550077e-01;
+        posq[5].z = -1.733803676e+00;
 
         // Define device pointers
         double *e_d;
@@ -64,6 +64,8 @@ int main() {
         t.report();
 
         // Copy results back to the host
+        double expectedEnergy = 6.14207815;
         cudaMemcpy(&e, e_d, sizeof(double), cudaMemcpyDeviceToHost);
         std::cout << std::endl << "Energy: " << e[0] << " kcal/mol" << std::endl;
+        std::cout << "Expected Energy: " << expectedEnergy << " kcal/mol" << std::endl;
 }
