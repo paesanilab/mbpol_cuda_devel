@@ -14,7 +14,7 @@ __global__ void evaluate_2b(
         double3 * forces,
         double * energy) {
         // This function will parallelize computeInteraction to run in parallel with all the pairs of molecules,
-        // for now just computing the interaction between molecule 0 and molecule 1
+        // for now just computing the interaction between the 2 molecules (identified by their Oxygen atom)
         energy[0] = computeInteraction(0, 3, posq, forces);
 }
 
