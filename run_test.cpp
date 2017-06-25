@@ -12,7 +12,7 @@ int main() {
     t.start();
     double *e_d;
     double3 *forces_d;
-    double4* *posq_d, periodicBoxSize_d;
+    double4 *posq_d, *periodicBoxSize_d;
     const unsigned int N_ATOMS = 6;
     size_t posq_size = N_ATOMS * sizeof(double4);
     size_t forces_size = N_ATOMS * sizeof(double3);
