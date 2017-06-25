@@ -14,13 +14,12 @@ int main() {
         const unsigned int N_ATOMS = 6;
         // Define host variables
         double4 posq[N_ATOMS]; // using OpenMM convention of position array also including charge q, so it is x,y,z pos and charge
-        double4 periodicBoxSize;
         double e[1];
 
         // Define positions from the unit test at:
         // https://github.com/paesanilab/mbpol_openmm_plugin/blob/master/platforms/cuda/tests/TestCudaMBPolTwoBodyForce.cpp#L60
 
-        posq[0].x = -1.516074336e+00;
+        posq[0].x = -1.516074336e+00; //[A]
         posq[0].y = 2.023167650e-01;
         posq[0].z = 1.454672917e+00;
         posq[1].x = 6.218989773e-01;
@@ -42,7 +41,7 @@ int main() {
         // Define device pointers
         double *e_d;
         double3 *forces_d;
-        double4 *posq_d, *periodicBoxSize_d;
+        double4 *posq_d;
 
         // Allocate memory on the device
         size_t posq_size = N_ATOMS * sizeof(double4);
@@ -50,9 +49,7 @@ int main() {
         cudaMalloc((void **) &posq_d, posq_size);
         cudaMalloc((void **) &forces_d, forces_size);
         cudaMalloc((void **) &e_d, sizeof(double));
-        cudaMalloc((void **) &periodicBoxSize_d, sizeof(double4));
         cudaMemcpy(posq_d, &posq, posq_size, cudaMemcpyHostToDevice);
-        // cudaMemcpy(periodicBoxSize_d, &periodicBoxSize, sizeof(double4), cudaMemcpyHostToDevice);
         // cudaMemset(e_d, -1234., sizeof(double)) // easy way to check if energy is being written by the kernel;
         
         t.stop();
@@ -62,7 +59,7 @@ int main() {
         // Launch the CUDA kernel to compute energy and forces
         std::cout << std::endl << "Launch the CUDA kernel" << std::endl;
         t.start();
-        launch_evaluate_2b(posq_d, periodicBoxSize_d, forces_d, e_d);
+        launch_evaluate_2b(posq_d, forces_d, e_d);
         t.stop();
         t.report();
 
