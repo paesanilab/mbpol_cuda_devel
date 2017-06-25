@@ -31,9 +31,9 @@ int main() {
     t.start();
     launch_evaluate_2b(posq_d, periodicBoxSize_d, forces_d, e_d);
     t.stop();
-    std::cout << std::endl << "CUDA Maple" << std::endl;
     t.report();
     t.start();
     cudaMemcpy(&e, e_d, sizeof(double), cudaMemcpyDeviceToHost);
     t.stop();
+    std::cout << std::endl << "Energy: " << e[0] << " kcal/mol" << std::endl;
 }

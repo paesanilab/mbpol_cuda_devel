@@ -5,6 +5,8 @@ extern "C" __device__ double computeInteraction(
         const double4* periodicBoxSize,
         double3 * forces) {
 
+        // CUDA COMPUTATIONAL KERNEL
+
         return 0;
 }
 
