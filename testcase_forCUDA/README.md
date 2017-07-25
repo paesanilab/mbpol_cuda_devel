@@ -14,13 +14,13 @@ File list:
 - readhdf5.hpp      Class to read in dataset saved in a HDF5 file. Need HDF5 library support.
 - network.cu        Class to model neural network layer/algorithm. Need CUDA/CUDNN/CUBLAS supports.
 
--testcase_forCUDA_single.cu   A single-float precision tester.
--testcase_forCUDA_single.in   Input samples for the above tester.
--32_2b_nn_single.hdf5         HDF5 file for the above tester
+- testcase_forCUDA_single.cu   A single-float precision tester.
+- testcase_forCUDA_single.in   Input samples for the above tester.
+- 32_2b_nn_single.hdf5         HDF5 file for the above tester
 
--testcase_forCUDA_double.cu   A double-float precision tester.
--testcase_forCUDA_double.in   Input samples for the above tester.
--32_2b_nn_double.hdf5         HDF5 file for the above tester
+- testcase_forCUDA_double.cu   A double-float precision tester.
+- testcase_forCUDA_double.in   Input samples for the above tester.
+- 32_2b_nn_double.hdf5         HDF5 file for the above tester
 
 
 For the provided two tester:
