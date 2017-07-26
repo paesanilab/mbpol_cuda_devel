@@ -31,8 +31,8 @@ The example is given in two versions:
                               - `cublasDgemv()` : perform matrix dot vector in double float precision
                               - `cublasSgemm()` : perform matrix dot matrix in single float precision
                - softmax forwards, using `cudnnSoftmaxForward()`
-               - Activation_TANH forwards, using cudnnActivationForward() with CUDNN_ACTIVATION_TANH
-               - Activation_ReLU forwards, using cudnnActivationForward() with CUDNN_ACTIVATION_RELU
+               - Activation_TANH forwards, using `cudnnActivationForward()` with CUDNN_ACTIVATION_TANH
+               - Activation_ReLU forwards, using `cudnnActivationForward()` with CUDNN_ACTIVATION_RELU
      File "two_layer_NN.cu" is the tester, in which layers are created and predictions are made according to the above two layers algorithms.
      This code works only with single precision float at present.
 
