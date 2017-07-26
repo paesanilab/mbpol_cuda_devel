@@ -20,8 +20,8 @@ The example is given in two versions:
 1) A Python script, which was the originally designed from the course, showing the clear walk path of the basic concept of NN.
 
 2) A C++ code based on CUDNN/CUBLAS/CUDA, showing how to use CUDNN to solve the NN problem.
-     It uses the "error_util.h" file coming from the "mnistCUDNN" example composed by nVIDIA.
-     Current implemented contents include:
+     It uses the "error_util.h" and "gemv.h" file coming from the "mnistCUDNN" example composed by nVIDIA.
+     The core of the code is class file "network.cu", in which the current implemented definitions include:
           - Layers, its input/output dimension (m,n), the weighted matrix (W[m,n]), a bias vector (b[n])
           - Algorithm between layers, including:
                - simple fully connected forward, using `cublasSgemv()` function
@@ -33,7 +33,8 @@ The example is given in two versions:
                - softmax forwards, using `cudnnSoftmaxForward()`
                - Activation_TANH forwards, using cudnnActivationForward() with CUDNN_ACTIVATION_TANH
                - Activation_ReLU forwards, using cudnnActivationForward() with CUDNN_ACTIVATION_RELU
-     This code works with single precision float at present.
+     File "two_layer_NN.cu" is the tester, in which layers are created and predictions are made according to the above two layers algorithms.
+     This code works only with single precision float at present.
 
 In the offered example, the Python tester generates a random two layers model, with 4x10 dims in the first layer and 10x3 in the second. 
 Then, it creates 5 random samples (each in a vector of size 4), and is given the correct classifiers. 
@@ -41,7 +42,7 @@ After this step the Python script predicts the scores after all layers, and calc
 
 In the CUDA/CUDNN tester, the weights/bias/input_samples/classifiers generated randomly by the Python code are copied/pasted into an input file, 
 and are input to the CUDA/CUDNN tester as arraies when the file is loaded. 
-Then the scores and losses of all samples are predicted and compared with what Python gives out.
+Then the scores and losses of all samples are predicted (in sequence) and compared with what Python gives out.
 
 The results from these two testers show great consistency, with around  1e-7 difference by single float precision.
 
