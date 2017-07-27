@@ -79,18 +79,18 @@ class TwoLayerNet(object):
     # shape (N, C).                                                             #
     #############################################################################
     
-    print('X=',X)
+    #print('X=',X)
     
     max_before_h1 = X.dot(W1)+ b1
-    print('before_max_h1 =',max_before_h1)
+    #print('before_max_h1 =',max_before_h1)
     
     
     
     h1 = np.maximum(0, max_before_h1)
-    print('h1=',h1)
+    #print('h1=',h1)
     
     h2 = h1.dot(W2) + b2
-    print('h2=',h2)
+    #print('h2=',h2)
     
     scores = h2
 
@@ -115,11 +115,9 @@ class TwoLayerNet(object):
     
     h2_exp = np.exp(h2)
     h2_expnorm_eachsample = h2_exp.sum(1)
-    loss_eachsample = np.log(h2_expnorm_eachsample) - h2[range(N), y]
-    print('loss_eachsampe = ', loss_eachsample)
-    loss = np.average(loss_eachsample)
-    
-    
+    self.loss_eachsample = np.log(h2_expnorm_eachsample) - h2[range(N), y]
+    #print('loss_eachsampe = ', loss_eachsample)
+    loss = np.average(self.loss_eachsample)
 
     #############################################################################
     #                              END OF loss calculation                      #
