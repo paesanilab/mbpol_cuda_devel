@@ -67,6 +67,7 @@
 *                                       Class now accept single/double precision data
 *                                       Create a list of layers tracking the initialization of NN model
 *                                       Class now accept multiple sample inputs
+*                                       
 */
 
 #if !defined(_NN_H_)
@@ -79,6 +80,7 @@
 #include <stdlib.h>
 #include <string>
 #include <algorithm>   
+#include <limits>
 #include<cuda.h>
 #include<cudnn.h>
 #include<cublas_v2.h>
@@ -96,8 +98,12 @@ void printDeviceVector(int size, T* vec_d)
     vec = new T[size];
     cudaDeviceSynchronize();
     cudaMemcpy(vec, vec_d, size*sizeof(T), cudaMemcpyDeviceToHost);
-    std::cout.precision(7);
-    std::cout.setf( std::ios::fixed, std:: ios::floatfield );
+    if(TypeIsDouble<T>::value) {
+          std::cout.precision(std::numeric_limits<double>::digits10+1);
+    } else {
+          std::cout.precision(std::numeric_limits<float>::digits10+1);;
+    }
+    std::cout.setf( std::ios::fixed, std::ios::floatfield );
     for (int i = 0; i < size; i++)
     {
         std::cout << (vec[i]) << " ";
@@ -165,6 +171,7 @@ struct Layer_t
                         &data_h, &data_d);
         readAllocMemcpy( outputs, &bias_h, &bias_d);
         
+        // Some tester, if need to check layer input
         //cout<< "Layer weights initializing: " << endl;
         //printDeviceVector(inputs * outputs, data_d);
         
@@ -172,7 +179,7 @@ struct Layer_t
         //printDeviceVector( outputs, bias_d);
     }
     
-    // construct an activation layer
+    // construct an activation layer, by integer or by typename
     Layer_t<T>(string _name, int _acttype)
                   : data_h(NULL), data_d(NULL), bias_h(NULL), bias_d(NULL), 
                 inputs(0), outputs(0), type(Type_t::ACTIVIATION)
@@ -186,8 +193,7 @@ struct Layer_t
     Layer_t<T>(string _name, ActType_t _acttype)
                   : data_h(NULL), data_d(NULL), bias_h(NULL), bias_d(NULL), 
                 inputs(0), outputs(0), type(Type_t::ACTIVIATION)
-    {     
-          
+    {      
           acttype = _acttype;
           
           name = _name;
@@ -230,13 +236,13 @@ private:
 //
 //
 // Tricky Here!!!! Must use [col row] as input towards cublasSgemm()/cublasDgemm instead of [row col], 
-// since they use a "column-major" matrix instead of common "row-major" matrix.
+// since CUBLAS uses a "column-major" matrix instead of common "row-major" matrix.
 // e.g., for a matrix A =  [a11 a12 a13]
 //                         [a21 a22 a23]
 // in row-major, sequence of cell in memory is [a11 a12 a13 a21 a22 a23]  <- in our case the data are saved in this way
 // in column-major, sequence is [a11 a21 a12 a22 a13 a23]
 // Therefore, we must claim to CUBLAS that the saved data ([m,n]) has [n] "rows" and [m] "cols" 
-// And DO NOT transpose them, as they has already been regarded as a "transposed" matrix in the eye of CUBLAS.
+// And DO NOT transpose them, as the matrices have already been regarded as "transposed" matrices in the eye of CUBLAS.
 
 
 template <typename T>
@@ -289,7 +295,7 @@ struct gemm<float>{
 // and N samples form a matrix [N x w].
 // Therefore, the most optimized solution is to using a 2D-Tensor holding the matrix.
 // However, cudnn limits the lowest tensor dimension to 3D, so one need an extra dimension (height, or h) to utilize cudnn TensorDesciptor
-// In fact, it does NOT matter how to give h and w, but only to make sure  ( h * w == num_of_data_in_one_sample_vector )
+// In fact, it does NOT matter how to setup h and w, but only to make sure  ( h * w == num_of_data_in_one_sample_vector )
 //
 // Offered methods :
 //                       fullyConnectedForward(layer, N, h, w, float/double* srcData, f/d** dstData)
@@ -315,7 +321,7 @@ private:
     // Opaque tensor descriptors (N-dim matrix), for operations of layers
     cudnnTensorDescriptor_t srcTensorDesc, dstTensorDesc, biasTensorDesc;
 
-    cudnnActivationDescriptor_t  activDesc; // Algorithm used in CUDNN
+    cudnnActivationDescriptor_t  activDesc; // Activiation type used in CUDNN
 
     
     // create and destroy handles/descriptors, note the sequence of creating/destroying
@@ -391,7 +397,7 @@ private:
         destroyHandles();
     }
     
-    // Resize device memory
+    // Resize device memory and initialize to 0
     void resize(int size, T **data)
     {
         if (*data != NULL)
@@ -438,9 +444,9 @@ private:
         
         // perform forward calculation
         gemm<T>(cublasHandle, dim_x, dim_y, n, layer.data_d, srcData, *dstData);
-
-        h = dim_y; w = 1;      
         
+        // for future ease, set h = total_num_of_ele_in_output, and w = 1
+        h = dim_y; w = 1;      
     } 
 
 
@@ -520,10 +526,20 @@ private:
 
 //===========================================================================================
 //
-// Model of all layers (as a doubled list), combined with forward prediction
+// Model of all layers (as a double linked list), combined with forward prediction
 // 
 template <typename T>
 class Layer_Net_t{
+private:
+     
+     void switchptr(T** & alpha, T** & bravo){
+          T** tmp;
+          tmp = alpha;
+          alpha = bravo;
+          bravo = tmp;
+          tmp = nullptr;
+     }
+
 public:
      Layer_t<T>* root = nullptr;
     
@@ -543,9 +559,9 @@ public:
                delete root;
                root = nullptr;
           }
-          
      };    
      
+     // Inserting a dense layer
      void insert_layer(string &_name, int _inputs, int _outputs, 
           T*& _data_h, T*& _bias_h){
           if (root!=NULL) {
@@ -558,6 +574,8 @@ public:
           };
      
      };
+     
+     // Inserting an activiation layer by type (int)
      void insert_layer(string &_name, int _acttype){
           if (root!=NULL) {
                Layer_t<T>* curr = root;
@@ -570,6 +588,7 @@ public:
      
      };     
      
+     // Inserting an activiation layer by type (name)
      void insert_layer(string &_name, ActType_t _acttype){
           if (root!=NULL) {
                Layer_t<T>* curr = root;
@@ -582,7 +601,7 @@ public:
      
      };      
      
-     
+     // Get layer ptr according to its index (start from 1 as 1st layer, 2 as seond layer ...)
      Layer_t<T>* get_layer_by_seq(int _n){
           Layer_t<T>* curr=root;
           int i = 1;
@@ -590,67 +609,53 @@ public:
           while( (curr->next != NULL)  && (i<_n) ){
                curr = curr->next;
                i++ ;
-          
-          
           };
           return curr;
      }
      
+     // Make prediction according to all the layers in the model
      void predict(T* _inputData, int _n, int _w){
         
         if (root != NULL) {
              network_t<T> neural_net;
              int n,h,w;   // number of sampels in one batch ; height ; width 
              
-             T *devData_alpha = NULL, *devData_bravo = NULL;  // two storage places (alpha and bravo) saving data flow
-            
-             n = _n; h = 1; w = _w;   
+             T *devData_alpha = nullptr, *devData_bravo = nullptr;  // two storage places (alpha and bravo) saving data flow
+             
+             // two ptrs towards either alpha or bravo
+             // controlling from which the data is read
+             // and to which the result is written to 
+             T** srcDataPtr = nullptr, **dstDataPtr = nullptr; 
+
              
              // initialize storage alpha and save input vector into it
+             cout << " Initializing input data ... " << endl;               
+             n = _n; h = 1; w = _w;               
              checkCudaErrors( cudaMalloc(&devData_alpha, n*h*w*sizeof(T)) );
              checkCudaErrors( cudaMemcpy( devData_alpha, _inputData,
                                           n*h*w*sizeof(T),
                                           cudaMemcpyHostToDevice) );
-             int seq =1 ;               //   = 1, read alpha and write to bravo
-                                        //   =-1, read bravo and write to alpha
-             
-             cout << " Read in data ... " << endl;              
-             //printDeviceVector(n*h*w, devData_alpha);
+             srcDataPtr = &devData_alpha;
+             dstDataPtr = &devData_bravo;
+
                                   
              Layer_t<T>* curr = root;
              do{
                cout << " Processing Layer : " << curr->name << endl;
-               if ( curr-> type == Type_t::DENSE ) {
-                    if ( seq == 1) {              
-                         neural_net.fullyConnectedForward((*curr), n, h, w, devData_alpha, &devData_bravo);
-                         
-                         //cout<< " After Layer : " << curr->name <<endl;
-                         //printDeviceVector(n*h*w, devData_bravo);     
-                         
-                    } else {
-                         neural_net.fullyConnectedForward((*curr), n, h, w, devData_bravo, &devData_alpha);
-                         
-                         //cout<< " After Layer : " << curr->name <<endl;
-                         //printDeviceVector(n*h*w, devData_alpha);                          
-                    }
-                    seq *= -1;
-               } else if (curr -> type == Type_t::ACTIVIATION){
-                    if (curr -> acttype == ActType_t::TANH){
+               if ( curr-> type == Type_t::DENSE ) { 
+                    // If it is a dense layer, we perform fully_connected forward 
+                    neural_net.fullyConnectedForward((*curr), n, h, w, *srcDataPtr, dstDataPtr);
                     
-                         
-                         if ( seq == 1) {              
-                              neural_net.activationForward_TANH(n, h, w, devData_alpha, &devData_bravo);
-                              
-                              //cout<< " After Layer : " << curr->name <<endl;
-                              //printDeviceVector(n*h*w, devData_bravo);                                                 
-                         } else {
-                              neural_net.activationForward_TANH(n, h, w, devData_bravo, &devData_alpha);
-                              
-                              //cout<< " After Layer : " << curr->name <<endl;
-                              //printDeviceVector(n*h*w, devData_alpha);                               
-                         }
-                         seq *= -1;                         
-                    } else if (curr->acttype != ActType_t::LINEAR) {
+                    // Swith the origin/target memory array after the step
+                    switchptr(srcDataPtr, dstDataPtr);
+                      
+               } else if (curr -> type == Type_t::ACTIVIATION){
+                    // If it is an activiation layer, perform corresponding activiation forwards
+                    // In fact, activiation::linear = doing NOTHING 
+                    if (curr -> acttype == ActType_t::TANH){
+                         neural_net.activationForward_TANH(n, h, w, *srcDataPtr, dstDataPtr);
+                         switchptr(srcDataPtr, dstDataPtr);
+                    } else if (curr->acttype != ActType_t::LINEAR) {    
                          cout << "Unknown activation type!" <<endl;
                     } 
                } else {
@@ -658,14 +663,12 @@ public:
                }
              } while(  (curr=curr->next) != NULL);
              
-             cout << "Final score : " ;         
-             if (seq == 1) {
-                    printDeviceVector<T>(n*h*w, devData_alpha);
-             } else {
-                    printDeviceVector<T>(n*h*w, devData_bravo);
-             }
+             cout << "Final score : " ;        
+             printDeviceVector<T>(n*h*w, *srcDataPtr);
              
-            
+             // Don't forget to release resource !!!
+             srcDataPtr = nullptr;
+             dstDataPtr = nullptr;
               
              checkCudaErrors( cudaFree(devData_alpha) );
              checkCudaErrors( cudaFree(devData_bravo) );

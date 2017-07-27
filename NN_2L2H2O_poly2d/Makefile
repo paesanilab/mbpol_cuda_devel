@@ -40,7 +40,7 @@ LIBRARIES += -L$(HDF5_PATH)/lib
 # Target rules
 all: clean build
 
-build: testcase_forCUDA_single testcase_forCUDA_double
+build: NN_2L2H2O_poly2d
 
 %: %.cu 
 	$(NVCC) $(INCLUDES) $(LIBRARIES) $(NVCCFLAGS) $(CCFLAGS) $(LDFLAGS) -o $@ $<
@@ -51,6 +51,5 @@ build: testcase_forCUDA_single testcase_forCUDA_double
 	
 clean:
 	rm -rf *o
-	rm -f testcase_forCUDA_single
-	rm -f testcase_forCUDA_double
+	rm -f NN_2L2H2O_poly2d
 	
