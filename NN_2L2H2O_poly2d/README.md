@@ -18,7 +18,7 @@ It will read out layers names, weights and bias from an HDF5 file in sequence, t
 
 ### For class file *readhdf5.hpp* reading HDF5 file:  
 This file uses HDF5 library C++ API, and offers functions:
-   - to read an attribute name and saved data (usually strings) in a HDF5 file group, and retain the order.
+   - to read an attribute name and all saved attribute data (usually strings) in a HDF5 file group, retaining the order (usually by creation time).
       - This function can be used to retrieve Neural Network layer names in the group "/model_weights/" of a given HDF5 file
       - Or can be used to retrieve dataset names (weight and bias) saved for each layer
    - to read out a dataset data by the dataset path in the HDF5 file.
@@ -26,10 +26,10 @@ This file uses HDF5 library C++ API, and offers functions:
     
 ### For class file *network.cu* modelling Neural Network layers and algorithms:
 This file uses CUDA/CUDNN/CUBLAS libraries, and offers:  
-   - Layer creation, including a normal dense layer and an activiation layer. Saved weights and bias are initialized on both host and device.
+   - Layer creation, including normal dense layers, and activiation layers. Saved weights and bias of dense layers are initialized on both host and device.
    - Neural Network algorithms, include:
-       - fully connected forward, based on function `cublasSgemm()` or `cublasDgemm()` according to the precision of data
-          - `cublasSgemm()` is a function utilizing cuda library to perform fast algebra dot product of *m[atrix]* and *m[atrix]* in **single** floating point precision. And similarly, 
+       - fully connected forward, based on function `cublasSgemm()` or `cublasDgemm()` according to data precision  
+          - `cublasSgemm()` is a function utilizing cublas library to perform fast algebra dot product of *m[atrix]* and *m[atrix]* in **single** floating point precision. Similarly, 
           - `cublasDgemm()` perform *matrix* dot *matrix* in **double** float precision
           - `cublasDgemv()` perform *matrix* dot *vector* in **double** float precision
        - softmax forwards, using `cudnnSoftmaxForward()`
@@ -38,18 +38,18 @@ This file uses CUDA/CUDNN/CUBLAS libraries, and offers:
    - Layer list creation, saving a list of layers and automatically performing prediction according to layer types. 
 
 ### For the provided tester:  
-These testers are from repo /paesanilab/NeuralNets/testcase_forCUDA/ which are originally written in Python with Keras/Theano support.  
-In the repo, the trained layers weights/bias are saved in a HDF5 file, and testing samples are written to an text file (both in different precison, respectively).  
-The above files are loaded by this C++ code to reproduce similar results as in Python, for the purpose of testing CUDA/CUDNN/CUBLAS utility in C++.  
+This tester is from repo /paesanilab/NeuralNets/testcase_forCUDA/ which is originally written in Python with Keras/Theano support.  
+In that repo, the trained layers weights/bias were saved in a HDF5 file, and testing samples were written to a text file (in different precisons, respectively).  
+The above files are loaded by this C++ code attemping to reproduce similar results as in Python, for the purpose of testing CUDA/CUDNN/CUBLAS utility in C++.  
 File *python.out* contains the results from Keras/Theano based Python program.  
 
-The results from single precision tester have an difference of less than 1e-7, and the difference by double precision is at least less than 1e-15.
+The results in single floating point precision tester have a difference of around 1e-7, and in double floating point precision have a difference of around 1e-15.
     
 ## TO RUN
 To make executive files:
-   - Make sure cuda/cudnn and hdf5 libraries are installed. Makefile will look for environment variable *CUDA_PATH/CUDNN_PATH/HDF5_PATH* to locate the installed library and included header files. If not found, it will look for /usr/local/cuda and /usr/local/hdf5 If not found, it will fail.
-   - If the libraries path are correctly found, type "make" to make two executive files.
-   - Run `NN_L2H2O_poly2d` for the tester.
+   - Make sure **cuda/cudnn** and **hdf5** libraries are installed. Makefile will look for environment variable *CUDA_PATH/CUDNN_PATH/HDF5_PATH* to locate the installed library and included header files. If not found, it will look for /usr/local/cuda and /usr/local/hdf5. If not found, it will fail.
+   - If the libraries paths are correctly found, type "make" to make the executive file.
+   - Run `NN_L2H2O_poly2d` for testing.
    - Compare the final output scores with what are from Python Keras/Theano.
 
 
