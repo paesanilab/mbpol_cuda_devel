@@ -2,12 +2,8 @@
 
 ## General
 These codes model the complete workflow of performing prediction based on Neural Network model in C++ and with CUDA/CUDNN/CUBLAS libraries and HDF5 support.  
-<<<<<<< HEAD
 It will read out layers names, weights and bias from an HDF5 file in sequence, then create layers based on their type, and predict final scores by the input samples.  
 A tester is offered for both single/double floating point precision tests, a feed-forward (5layer of 32) NN with 2nd-degree polynomials as features for L2H2O-L2H2O dimers, [NN_L2H2O_poly2d](https://github.com/paesanilab/NeuralNets.git/testcase_forCUDA)
-=======
-It will read out layers names, weights and bias from an HDF5 file in sequence, then create layers based on their type, and predict final scores by the input samples.
->>>>>>> f328f3c566c6e0530b3e384c7e075d611ea6fbec
 
 ## File list
 - *error_util.hpp*                 : File for handling exception info of cuda/cublas/cudnn
@@ -18,12 +14,8 @@ It will read out layers names, weights and bias from an HDF5 file in sequence, t
 - *NN_L2H2O_poly2d.in*             : Input samples data
 - *32_2b_nn_single.hdf5*           : HDF5 file for the single floating point test
 - *32_2b_nn_double.hdf5*           : HDF5 file for the double floating point test
-<<<<<<< HEAD
 - *single_precision_keras_prediction.csv*    : Reference output result with single floating point precision from Python Keras/Theano 
 - *double_precision_keras_prediction.csv*    : Reference output result with double floating point precision from Python Keras/Theano 
-=======
-- *python.out*                     : Reference Output result from Python Keras/Theano
->>>>>>> f328f3c566c6e0530b3e384c7e075d611ea6fbec
 <br>
 
 ### For class file *readhdf5.hpp* reading HDF5 file:  
@@ -51,11 +43,7 @@ This file uses CUDA/CUDNN/CUBLAS libraries, and offers:
 This tester is from repo /paesanilab/NeuralNets/testcase_forCUDA/ which is originally written in Python with Keras/Theano support.  
 In that repo, the trained layers weights/bias were saved in a HDF5 file, and testing samples were written to a text file (in different precisons, respectively).  
 The above files are loaded by this C++ code attemping to reproduce similar results as in Python, for the purpose of testing CUDA/CUDNN/CUBLAS utility in C++.  
-<<<<<<< HEAD
 File *single/double_precision_keras_prediction.csv* contains the results from Keras/Theano based Python program.  
-=======
-File *python.out* contains the results from Keras/Theano based Python program.  
->>>>>>> f328f3c566c6e0530b3e384c7e075d611ea6fbec
 
 The results in single floating point precision tester have a difference of around 1e-7, and in double floating point precision have a difference of around 1e-15.
     
