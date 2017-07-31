@@ -26,7 +26,11 @@ void Read_Layer_Data_By_DatName (H5File file, const char* name, T* & data_out, h
      file      : the opened H5File
      name      : dataset name (include path)
      data_out  : pointer to the first read out data    (returned)
+<<<<<<< HEAD
      rank      : dimensionality of data               (returned)
+=======
+     rank      : dimensionaility of data               (returned)
+>>>>>>> f328f3c566c6e0530b3e384c7e075d611ea6fbec
      dims      : size of each dimension of data        (returned)
      
      Returned data_out array is saved in contiguously in memory with size dims[0]*dims[1]*...*dims[rank-1]
