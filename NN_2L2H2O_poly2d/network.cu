@@ -531,6 +531,11 @@ private:
 template <typename T>
 class Layer_Net_t{
 private:
+
+     // network algorithm initialize with constructor
+     // Note, as nVidia suggested, it is best practice to let all cuda context live 
+     // as long as the application without frequent create/destroy
+     network_t<T> neural_net;
      
      void switchptr(T** & alpha, T** & bravo){
           T** tmp;
@@ -614,10 +619,10 @@ public:
      }
      
      // Make prediction according to all the layers in the model
-     void predict(T* _inputData, int _n, int _w){
+     void predict(T* _inputData, int _n, int _w, T* & _outputData_h, unsigned long int& _outsize){
         
         if (root != NULL) {
-             network_t<T> neural_net;
+             
              int n,h,w;   // number of sampels in one batch ; height ; width 
              
              T *devData_alpha = nullptr, *devData_bravo = nullptr;  // two storage places (alpha and bravo) saving data flow
@@ -629,7 +634,7 @@ public:
 
              
              // initialize storage alpha and save input vector into it
-             cout << " Initializing input data ... " << endl;               
+             //cout << " Initializing input data ... " << endl;               
              n = _n; h = 1; w = _w;               
              checkCudaErrors( cudaMalloc(&devData_alpha, n*h*w*sizeof(T)) );
              checkCudaErrors( cudaMemcpy( devData_alpha, _inputData,
@@ -641,7 +646,7 @@ public:
                                   
              Layer_t<T>* curr = root;
              do{
-               cout << " Processing Layer : " << curr->name << endl;
+               //cout << " Processing Layer : " << curr->name << endl;
                if ( curr-> type == Type_t::DENSE ) { 
                     // If it is a dense layer, we perform fully_connected forward 
                     neural_net.fullyConnectedForward((*curr), n, h, w, *srcDataPtr, dstDataPtr);
@@ -663,8 +668,18 @@ public:
                }
              } while(  (curr=curr->next) != NULL);
              
-             cout << "Final score : " ;        
-             printDeviceVector<T>(n*h*w, *srcDataPtr);
+             //cout << "Final score : " ;        
+             //printDeviceVector<T>(n*h*w, *srcDataPtr);
+             
+             _outsize=n*h*w;
+             if(_outputData_h!=NULL){
+                    delete[] _outputData_h;
+             }
+             _outputData_h = new T[_outsize];
+             cudaDeviceSynchronize();
+             cudaMemcpy(_outputData_h, *srcDataPtr, _outsize*sizeof(T), cudaMemcpyDeviceToHost);            
+             
+             
              
              // Don't forget to release resource !!!
              srcDataPtr = nullptr;
