@@ -22,7 +22,7 @@ NVCC           := $(CUDA_PATH)/bin/nvcc -ccbin $(HOST_COMPILER)
 # flags
 CCFLAGS   := -std=c++11
 NVCCFLAGS := -Wno-deprecated-gpu-targets
-LDFLAGS   := -lcudnn -lcublas -lhdf5 -lhdf5_cpp
+LDFLAGS   := -lcudnn -lcublas -lhdf5 -lhdf5_cpp -O2
 
 
 # include paths
@@ -40,7 +40,11 @@ LIBRARIES += -L$(HDF5_PATH)/lib
 # Target rules
 all: clean build
 
-build: NN_2L2H2O_poly2d
+build: build1 build2
+
+build1: NN_2L2H2O_poly2d 
+
+build2: NN_2L2H2O_poly2d_benchmarking
 
 %: %.cu 
 	$(NVCC) $(INCLUDES) $(LIBRARIES) $(NVCCFLAGS) $(CCFLAGS) $(LDFLAGS) -o $@ $<
@@ -51,5 +55,5 @@ build: NN_2L2H2O_poly2d
 	
 clean:
 	rm -rf *o
-	rm -f NN_2L2H2O_poly2d
+	rm -f NN_2L2H2O_poly2d NN_2L2H2O_poly2d_benchmarking
 	
