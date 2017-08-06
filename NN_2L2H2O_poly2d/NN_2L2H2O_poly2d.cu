@@ -120,20 +120,33 @@ void runtester(const char* filename, const char* checkchar, T* input){
           cout << "Prediction all samples : " <<endl;
           layers.predict(input, SAMPLECOUNT, SAMPLEDIM, output, outsize);
           
-          cout << endl << " Final score (show at most " << MAXSHOWRESULT << " records):" <<endl;
-          
-          
+          // show up the final score, to check the result consistency
+          // first, setup the precision
           if(TypeIsDouble<T>::value) {
                std::cout.precision(std::numeric_limits<double>::digits10+1);
           } else {
                std::cout.precision(std::numeric_limits<float>::digits10+1);;
           }
-          std::cout.setf( std::ios::fixed, std::ios::floatfield );          
+          std::cout.setf( std::ios::fixed, std::ios::floatfield );        
           
-          for(int ii=0; (ii<outsize) && (ii<MAXSHOWRESULT); ii++){
-               cout << (output[ii]) << "  " ;
+          // then, select how many results will be shown.
+          // if too many output, only show some in the beginning and some in the end
+          if (outsize <= MAXSHOWRESULT){
+               cout << endl << " Final score are :" <<endl;            
+                for(int ii=0; ii<outsize; ii++){
+                    cout << (output[ii]) << "  " ;
+               }         
+          } else {
+               cout << " Final score ( first " << MAXSHOWRESULT/2 << " records ):" <<endl;
+               for(int ii=0; ii<(MAXSHOWRESULT/2); ii++){
+                    cout << (output[ii]) << "  " ;
+               }
+               cout << endl << " Final score ( last " << MAXSHOWRESULT/2 << " records ):" <<endl;
+               for(int ii=(outsize-MAXSHOWRESULT/2); ii<outsize; ii++){
+                    cout << (output[ii]) << "  " ;
+               }                         
           }
-          cout << endl;          
+          cout << endl;        
           
           
      } catch (...){

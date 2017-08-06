@@ -188,7 +188,7 @@ void runtester(const char* filename, const char* checkchar, T* input, int iterat
 
 int main(int argc, char *argv[]){
      
-    cout << " Usage :  THISFILE  [-device=0] [-iter=100] " <<endl << endl;
+    cout << " Usage :  THIS_EXECUTABLE_FILE  [-device=0] [-iter=100] " <<endl << endl;
 
     int version = (int)cudnnGetVersion();  // display the currunt CUDNN library version
     
