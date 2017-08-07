@@ -16,6 +16,8 @@ A tester is offered for both single/double floating point precision tests, a fee
 - *32_2b_nn_double.hdf5*           : HDF5 file for the double floating point test
 - *single_precision_keras_prediction.csv*    : Reference output result with single floating point precision from Python Keras/Theano 
 - *double_precision_keras_prediction.csv*    : Reference output result with double floating point precision from Python Keras/Theano 
+- *NN_L2H2O_poly2d_benchmarking.cu*: Benchmarking tester source file. It will include 42105 input samples with 69 for each. Since the input sample data file is too large, it will not be offered here. Instead, the compiled file is saved.
+- *NN_L2H2O_poly2d_benchmarking*   : Saved benchmarking tester executable file. To run: `./NN_L2H2O_poly2d [-device=0] [-iter=100]` . `-device=X` will set the application running on selected nVidia supported GPU. `-iter=N` will run the benchmarking for *N* times. 
 <br>
 
 ### For class file *readhdf5.hpp* reading HDF5 file:  
@@ -54,5 +56,8 @@ To make executive files:
    - Run `NN_L2H2O_poly2d` for testing.
    - Compare the final output scores with what are from Python Keras/Theano.
 
-
+## For Benchmarking
+To run: `./NN_L2H2O_poly2d [-device=0] [-iter=100]`  
+`-device=X` will set the application running on selected nVidia supported GPU.  
+`-iter=N` will run the benchmarking for *N* times. 
 
