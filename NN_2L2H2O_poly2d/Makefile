@@ -40,11 +40,7 @@ LIBRARIES += -L$(HDF5_PATH)/lib
 # Target rules
 all: clean build
 
-build: build1 build2
-
-build1: NN_2L2H2O_poly2d 
-
-build2: NN_2L2H2O_poly2d_benchmarking
+build: NN_2L2H2O_poly2d 
 
 %: %.cu 
 	$(NVCC) $(INCLUDES) $(LIBRARIES) $(NVCCFLAGS) $(CCFLAGS) $(LDFLAGS) -o $@ $<
@@ -55,5 +51,5 @@ build2: NN_2L2H2O_poly2d_benchmarking
 	
 clean:
 	rm -rf *o
-	rm -f NN_2L2H2O_poly2d NN_2L2H2O_poly2d_benchmarking
+	rm -f NN_2L2H2O_poly2d
 	
