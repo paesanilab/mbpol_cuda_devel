@@ -20,9 +20,9 @@ HOST_COMPILER  ?= g++
 NVCC           := $(CUDA_PATH)/bin/nvcc -ccbin $(HOST_COMPILER)
 
 # flags
-CCFLAGS   := -std=c++11
+CCFLAGS   := -std=c++11 -O3
 NVCCFLAGS := -Wno-deprecated-gpu-targets
-LDFLAGS   := -lcudnn -lcublas -lhdf5 -lhdf5_cpp -O2
+LDFLAGS   := -lcudnn -lcublas -lhdf5 -lhdf5_cpp
 
 
 # include paths
@@ -40,7 +40,7 @@ LIBRARIES += -L$(HDF5_PATH)/lib
 # Target rules
 all: clean build
 
-build: NN_2L2H2O_poly2d 
+build: NN_2L2H2O_poly2d
 
 %: %.cu 
 	$(NVCC) $(INCLUDES) $(LIBRARIES) $(NVCCFLAGS) $(CCFLAGS) $(LDFLAGS) -o $@ $<
