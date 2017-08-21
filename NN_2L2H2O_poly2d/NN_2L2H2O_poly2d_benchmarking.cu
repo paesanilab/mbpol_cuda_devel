@@ -14,7 +14,7 @@
 #include "readhdf5.hpp"
 #include "network.cu"
 
-#include "NN_2L2H2O_poly2d_benchmarking.in"          // input sample data, in 2D array
+#include "BenchMarkingInput/NN_2L2H2O_poly2d_benchmarking.in"          // input sample data, in 2D array
 #define SAMPLECOUNT 42105                  // input sample count
 #define SAMPLEDIM   69                  // each input sample's dim 
 
