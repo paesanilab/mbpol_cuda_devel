@@ -14,11 +14,12 @@ A tester is offered for both single/double floating point precision tests, a fee
 - `NN_L2H2O_poly2d.in`             : Input samples data
 - `32_2b_nn_single.hdf5`           : HDF5 file for the single floating point test
 - `32_2b_nn_double.hdf5`           : HDF5 file for the double floating point test
-- `single_precision_keras_prediction.csv`    : Reference output result with single floating point precision from Python Keras/Theano 
-- `double_precision_keras_prediction.csv`    : Reference output result with double floating point precision from Python Keras/Theano 
+- `keras_prediction_single_precision.csv`    : Reference output result with single floating point precision from Python Keras/Theano 
+- `keras_prediction_double_precision.csv`    : Reference output result with double floating point precision from Python Keras/Theano 
 - `NN_L2H2O_poly2d_benchmarking.cu`: Benchmarking tester source file. It will include 42105 input samples with 69 for each, and test the run time of *predicting final scores of all samples* (excluding run time of *file loading, model initialization etc*) . Since the input sample data file is too large, it will not be offered here. Instead, the compiled file is saved.
-- `NN_L2H2O_poly2d_benchmarking`   : Saved benchmarking tester executable file. To run: `./NN_L2H2O_poly2d [-device=0] [-iter=100]` . `-device=X` will set the application running on selected nVidia supported GPU. `-iter=N` will run the benchmarking for *N* times. 
-<br>
+- `BenchMarkingInput/BenchMarking_InputGeneration.py`   : Python script to generate input array (size[42105x69], double precision) which is used for benchmarking
+- `BenchMarkingInput/NN_input_2LHO_correctedD6_f64.dat` : Input to the above python script
+
 
 ### For class file `readhdf5.hpp` reading HDF5 file:  
 This file uses HDF5 library C++ API, and offers functions:
@@ -48,7 +49,14 @@ The above files are loaded by this C++ code attemping to reproduce similar resul
 File *single/double_precision_keras_prediction.csv* contains the results from Keras/Theano based Python program.  
 
 The results in single floating point precision tester have a difference of around 1e-7, and in double floating point precision have a difference of around 1e-15.
-    
+
+## To Compile:
+To compile the tester and benchmarking file:
+   - Run python script: `BenchMarking_InputGeneration.py` to get benchmarking input file:  
+        - In folder `BenchMarkingInput` : run `python BenchMarking_InputGeneration.py`
+   - Run `make` to create two executable files
+   - Run `make clean` to clean old object and executable files.
+
 ## TO RUN
 To make executive files:
    - Make sure `cuda/cudnn` and `hdf5` libraries are installed. Makefile will look for environment variable *CUDA_PATH/CUDNN_PATH/HDF5_PATH* to locate the installed library and included header files. If not found, it will look for /usr/local/cuda and /usr/local/hdf5. If not found, it will fail.
