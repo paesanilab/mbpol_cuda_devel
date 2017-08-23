@@ -6,19 +6,22 @@ It will read out layers names, weights and bias from an HDF5 file in sequence, t
 A tester is offered for both single/double floating point precision tests, a feed-forward (5layer of 32) NN with 2nd-degree polynomials as features for L2H2O-L2H2O dimers, [NN_L2H2O_poly2d](https://github.com/paesanilab/NeuralNets.git/testcase_forCUDA)
 
 ## File list
-- *error_util.hpp*                 : File for handling exception info of cuda/cublas/cudnn
-- *whichtype.hpp*                  : File for testing the data type in a template
-- *readhdf5.hpp*                   : Class to read in dataset saved in a HDF5 file. Need HDF5 library support.
-- *network.cu*                     : Class to model neural network layer/algorithm. Need CUDA/CUDNN/CUBLAS supports.
-- *NN_L2H2O_poly2d.cu*             : Tester main function, with both single/double floating point precisions
-- *NN_L2H2O_poly2d.in*             : Input samples data
-- *32_2b_nn_single.hdf5*           : HDF5 file for the single floating point test
-- *32_2b_nn_double.hdf5*           : HDF5 file for the double floating point test
-- *single_precision_keras_prediction.csv*    : Reference output result with single floating point precision from Python Keras/Theano 
-- *double_precision_keras_prediction.csv*    : Reference output result with double floating point precision from Python Keras/Theano 
-<br>
+- `error_util.hpp`                 : File for handling exception info of cuda/cublas/cudnn
+- `whichtype.hpp`                  : File for testing the data type in a template
+- `readhdf5.hpp`                   : Class to read in dataset saved in a HDF5 file. Need HDF5 library support.
+- `network.cu`                     : Class to model neural network layer/algorithm. Need CUDA/CUDNN/CUBLAS supports.
+- `NN_L2H2O_poly2d.cu`             : Tester main function, with both single/double floating point precisions
+- `NN_L2H2O_poly2d.in`             : Input samples data
+- `32_2b_nn_single.hdf5`           : HDF5 file for the single floating point test
+- `32_2b_nn_double.hdf5`           : HDF5 file for the double floating point test
+- `keras_prediction_single_precision.csv`    : Reference output result with single floating point precision from Python Keras/Theano 
+- `keras_prediction_double_precision.csv`    : Reference output result with double floating point precision from Python Keras/Theano 
+- `NN_L2H2O_poly2d_benchmarking.cu`: Benchmarking tester source file. It will include 42105 input samples with 69 for each, and test the run time of *predicting final scores of all samples* (excluding run time of *file loading, model initialization etc*) . Since the input sample data file is too large, it will not be offered here. Instead, the compiled file is saved.
+- `BenchMarkingInput/BenchMarking_InputGeneration.py`   : Python script to generate input array (size[42105x69], double precision) which is used for benchmarking
+- `BenchMarkingInput/NN_input_2LHO_correctedD6_f64.dat` : Input to the above python script
 
-### For class file *readhdf5.hpp* reading HDF5 file:  
+
+### For class file `readhdf5.hpp` reading HDF5 file:  
 This file uses HDF5 library C++ API, and offers functions:
    - to read an attribute name and all saved attribute data (usually strings) in a HDF5 file group, retaining the order (usually by creation time).
       - This function can be used to retrieve Neural Network layer names in the group "/model_weights/" of a given HDF5 file
@@ -26,7 +29,7 @@ This file uses HDF5 library C++ API, and offers functions:
    - to read out a dataset data by the dataset path in the HDF5 file.
       - This function can be used to obtain a layer's weight and bias, given the absolute path is retrieved by the first function. 
     
-### For class file *network.cu* modelling Neural Network layers and algorithms:
+### For class file `network.cu` modelling Neural Network layers and algorithms:
 This file uses CUDA/CUDNN/CUBLAS libraries, and offers:  
    - Layer creation, including normal dense layers, and activiation layers. Saved weights and bias of dense layers are initialized on both host and device.
    - Neural Network algorithms, include:
@@ -46,13 +49,23 @@ The above files are loaded by this C++ code attemping to reproduce similar resul
 File *single/double_precision_keras_prediction.csv* contains the results from Keras/Theano based Python program.  
 
 The results in single floating point precision tester have a difference of around 1e-7, and in double floating point precision have a difference of around 1e-15.
-    
+
+## To Compile:
+To compile the tester and benchmarking file:
+   - Run python script: `BenchMarking_InputGeneration.py` to get benchmarking input file:  
+        - In folder `BenchMarkingInput` : run `python BenchMarking_InputGeneration.py`
+   - Run `make` to create two executable files
+   - Run `make clean` to clean old object and executable files.
+
 ## TO RUN
 To make executive files:
-   - Make sure **cuda/cudnn** and **hdf5** libraries are installed. Makefile will look for environment variable *CUDA_PATH/CUDNN_PATH/HDF5_PATH* to locate the installed library and included header files. If not found, it will look for /usr/local/cuda and /usr/local/hdf5. If not found, it will fail.
+   - Make sure `cuda/cudnn` and `hdf5` libraries are installed. Makefile will look for environment variable *CUDA_PATH/CUDNN_PATH/HDF5_PATH* to locate the installed library and included header files. If not found, it will look for /usr/local/cuda and /usr/local/hdf5. If not found, it will fail.
    - If the libraries paths are correctly found, type "make" to make the executive file.
    - Run `NN_L2H2O_poly2d` for testing.
    - Compare the final output scores with what are from Python Keras/Theano.
 
-
+## For Benchmarking
+To run: `./NN_L2H2O_poly2d [-device=0] [-iter=100]`  
+`-device=X` will set the application running on selected nVidia supported GPU.  
+`-iter=N` will run the benchmarking for *N* times. 
 
