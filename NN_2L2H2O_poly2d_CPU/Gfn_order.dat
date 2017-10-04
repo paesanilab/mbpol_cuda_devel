@@ -1,0 +1,21 @@
+## This file lists the sequence of atom relationship saved in G_function matrix
+## Each line represents a relationship between the first atom and the rest atoms
+## The G_function matrix will be constructed according to the line order of this file.
+##
+## E.g. in this file:
+##   (1st line) H H
+##   (2nd line) H O O
+##   (3rd line) H O 
+## Then the G_function matrix will be constructed in [HH - HOO - HO] sequence. 
+##
+
+H H
+#H O
+#H O O
+H H O
+#H H H
+#O H
+#O O
+#O H O
+#O H H
+
