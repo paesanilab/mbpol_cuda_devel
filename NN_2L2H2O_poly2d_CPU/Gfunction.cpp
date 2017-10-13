@@ -408,6 +408,25 @@ void Gfunction_t::make_G(const char* _distfile, int _titleline, const char* _col
 }
 
 
+
+void Gfunction_t::norm_rows_in_mtx_by_col_vector(double*& src_mtx, size_t src_row, size_t src_col, double*& scale_vec, int offset){
+     // scale each row in a matrix by a column vector
+     #ifdef _OPENMP
+     #pragma omp parallel for simd shared(src_mtx, src_row, src_col, scale_vec)
+     #endif
+     for(int i = 0; i< src_row; i++){     
+          cblas_dscal(src_col-offset, scale_vec[i], src_mtx+i*src_col+offset, 1);
+     }
+}
+
+
+size_t get_count_by_percent(double* src, size_t src_count, double percentage, double threshold){
+     size_t count =0;
+     return count;
+     
+}
+
+
 // tester
 /*
 int main(int argc, char** argv){ 

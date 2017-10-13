@@ -101,7 +101,7 @@ bool IsFloat( string& myString ) {
 //==============================================================================
 //
 // Read in a 2D array from file and save to  **data / rows / cols
-int read2DArrayfile(double** & data, size_t& rows, size_t& cols, const char* file, int titleline){
+int read2DArrayfile(double** & data, size_t& rows, size_t& cols, const char* file, int titleline, int thredhold_col, double thredhold_max){
     try { 
           
           clearMemo(data);

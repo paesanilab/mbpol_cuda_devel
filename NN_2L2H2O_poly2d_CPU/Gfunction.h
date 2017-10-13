@@ -5,6 +5,8 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <limits>
+
 #include "readGparams.h"
 #include "atomTypeID.h"
 
@@ -61,7 +63,7 @@ Gfunction_t();
 
 
 // load distance matrix
-void load_distfile(const char* distfile, int titleline=0);
+void load_distfile(const char* distfile, int titleline=0, int threshold_col=-1, double threshold=std::numeric_limits<double>::max());
 
 // load distance matrix index 
 void load_dist_colidx(const char* colidxfile);           // load model setup ( not implemented yet; need further reference on how to define it ).
@@ -77,6 +79,10 @@ void load_seq(const char* seqfile);
 // G-function Construction
 void make_G();
 void make_G(const char* _distfile, int _titleline, const char* _colidxfile, const char* _paramfile, const char* _ordfile);
+
+// G-function Normalization
+void norm_rows_in_mtx_by_col_vector(double* & src_mtx, size_t src_row, size_t src_col, double* & scale_vec, int offset=0);
+size_t get_count_by_percent(double* src, size_t src_count, double percentage);
 };
 
 #endif
