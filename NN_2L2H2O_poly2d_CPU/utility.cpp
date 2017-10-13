@@ -14,10 +14,15 @@
 #include <map>
 #include <string>
 
-
-
 #include "utility.h"
-#include <cblas.h>
+
+// Define the cblas library 
+#ifdef _USE_GSL
+#include <gsl/gsl_cblas.h>
+#elif _USE_MKL
+//#include <gsl/gsl_cblas.h>
+#endif
+
 
 #define FLAGSTART '-'
 #define FLAGASSGN '='
@@ -163,7 +168,7 @@ void transpose_mtx(double** & datrsc, double** & datdst, size_t& nrow_rsc, size_
           #pragma omp parallel for simd shared(datrsc, datdst, nrow_rsc, ncol_rsc)
           #endif      
           for(int irow = 0; irow< nrow_rsc; irow++){          
-               cblas_dcopy(ncol_rsc, &datrsc[irow][0], 1, &datdst[0][irow], nrow_rsc);          
+               cblas_dcopy( (const int) ncol_rsc, (const double*) &datrsc[irow][0], 1, &datdst[0][irow], (const int) nrow_rsc);          
           }
           
           // Test copying by col

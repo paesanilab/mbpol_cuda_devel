@@ -19,7 +19,15 @@
 #include "utility.h"
 #include "timestamps.h"
 
-#include <cblas.h>
+// Define the cblas library 
+#ifdef _USE_GSL
+#include <gsl/gsl_cblas.h>
+#elif _USE_MKL
+//#include <gsl/gsl_cblas.h>
+#endif
+
+
+
 #include <omp.h>
 
 using namespace std;
@@ -106,7 +114,7 @@ void Gfunction_t::cutoff(double* & rst, double* & Rij, size_t n, double R_cut) {
     }    
     
     double k = -1/R_cut;
-    cblas_daxpy( n , k, Rrsc, 1, Rdst, 1);   // tmp = (1.0 - Rrsc[i]/R_cut)
+    cblas_daxpy( (const int) n , (const int) k, (const double*) Rrsc, 1, Rdst, 1);   // tmp = (1.0 - Rrsc[i]/R_cut)
     
     // if R<= R_cut,   dst = tanh(tmp) ^ 3
     // else, dst = 0.0
@@ -150,7 +158,7 @@ void Gfunction_t::get_Gradial(double* & rst, double* & Rij, size_t n, double Rs,
 
 void Gfunction_t::get_Gradial_add(double* & rst, double*& tmp, double* & Rij, size_t n, double Rs, double eta ){      
      get_Gradial(tmp, Rij, n, Rs, eta);
-     cblas_daxpy(n, 1.0, tmp, 1, rst, 1);     
+     cblas_daxpy((const int)n, 1.0, (const double*)tmp, 1, rst, 1);     
 }
 
 void Gfunction_t::get_Gangular(double* & rst, double* & Rij, double* & Rik, double*&  Rjk, size_t n, double eta, double zeta, double lambd ){
@@ -165,7 +173,7 @@ void Gfunction_t::get_Gangular(double* & rst, double* & Rij, double* & Rik, doub
 
 void Gfunction_t::get_Gangular_add(double* & rst, double*& tmp, double* & Rij, double* & Rik, double*&  Rjk, size_t n, double eta, double zeta, double lambd ){
      get_Gangular(tmp, Rij, Rik, Rjk, n, eta, zeta, lambd);
-     cblas_daxpy(n, 1.0, tmp, 1, rst, 1);
+     cblas_daxpy((const int)n, 1.0, (const double *)tmp, 1, rst, 1);
 }
 
 

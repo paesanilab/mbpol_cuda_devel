@@ -14,11 +14,15 @@ TARGET_ARCH    ?= $(HOST_ARCH)
  
 
 # compiler
-HOST_COMPILER  ?= icpc
+ifdef CMP_INTEL
+HOST_COMPILER  = icpc
+else ifdef CMP_GNU
+HOST_COMPILER  = g++
+else
+HOST_COMPILER  = g++
+endif
 
-# flags
-#CCFLAGS   := -std=c++11 -xCORE-AVX2 -O3 
-#CCFLAGS   := -std=c++11 -xCOMMON-AVX512 -O3 
+# Compiler flags
 CCFLAGS   := -std=c++11 
 
 ifdef ENABLE_XHOST
@@ -38,16 +42,27 @@ CCFLAGS   += -O3
 endif
 
 
+# Libraries
+LDFLAGS   := -lgslcblas -fopenmp
+# GSL / MKL library
+ifdef USE_MKL
+LDFLAGS   += -D_USE_MKL
+else ifdef USE_GSL 
+LDFLAGS   += -D_USE_GSL
+else
+LDFLAGS   += -D_USE_GSL
+endif
+
+
+# NVCC flags
 NVCCFLAGS := -Wno-deprecated-gpu-targets
-LDFLAGS   := -lgslcblas -fopenmp 
 
 
 # include paths
-INCLUDES  := -I$(CBLAS_PATH)/include
-
-LIBRARIES := -L$(LD_LIBRARY_PATH)
-LIBRARIES += -L$(CBLAS_PATH)/lib64
-
+#INCLUDES  := -I$(CBLAS_PATH)/include
+#LIBRARIES := -L$(LD_LIBRARY_PATH)
+#LIBRARIES := -L$(CBLAS_PATH)/lib64
+#LIBRARIES  := -L/usr/lib64
 
 #=====================================================================
 #

@@ -18,7 +18,13 @@
 #include "timestamps.h"
 #include "Gfunction.h"
 
-#include <cblas.h>
+// Define the cblas library 
+#ifdef _USE_GSL
+#include <gsl/gsl_cblas.h>
+#elif _USE_MKL
+//#include <gsl/gsl_cblas.h>
+#endif
+
 #include <omp.h>
 
 using namespace std;
@@ -40,6 +46,9 @@ int main(int argc, char** argv){
           << "[-" << FLAG_ATOM_ORDER_FILE    << "=NONE]"
           << endl << endl;
 
+     if (argc < 2) {
+          return 0;    
+     } 
 
      Gfunction_t gf;     // the G-function
      
