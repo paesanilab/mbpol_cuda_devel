@@ -176,7 +176,7 @@ idx_t atom_Type_ID_t::find_atom_idx_by_name(std::string _name){
 // Array _idxary[atom1][atom2] contains the column index in distance matrix
 //   between [atom1] and [atom2].
 // So that _idxary[atom1][atom2] = _idxary[atom2][atom1]
-void atom_Type_ID_t::load_default_atom_id(double**& _idxary, size_t & _size){
+void atom_Type_ID_t::load_default_atom_id(idx_t**& _idxary, size_t & _size){
      insert_atom("H1(a)", "H");
      insert_atom("H2(a)", "H");
      insert_atom("H1(b)", "H");
@@ -207,7 +207,7 @@ void atom_Type_ID_t::load_default_atom_id(double**& _idxary, size_t & _size){
      
      _size = atoms.size();
 
-     init_mtx_in_mem(_idxary, _size, _size);
+     init_mtx_in_mem<idx_t>(_idxary, _size, _size);
      
      
      idx_t idx_first, idx_second;
@@ -222,7 +222,7 @@ void atom_Type_ID_t::load_default_atom_id(double**& _idxary, size_t & _size){
 
 };
 
-
+//===============================================================================
 // a tester
 /*
 int main(void){

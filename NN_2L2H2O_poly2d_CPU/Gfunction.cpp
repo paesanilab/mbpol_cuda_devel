@@ -24,6 +24,8 @@
 #include <gsl/gsl_cblas.h>
 #elif _USE_MKL
 //#include <gsl/gsl_cblas.h>
+#else 
+#include <gsl/gsl_cblas.h>
 #endif
 
 
@@ -45,12 +47,12 @@ const int COL_ANG_LAMBD=3;
 //
 // Elementary functions 
 //
-
-double Gfunction_t::cutoff(double R, double R_cut) {
-    double f=0.0;
+template <typename T>
+T Gfunction_t<T>::cutoff(T R, T R_cut) {
+    T f=0.0;
     if (R < R_cut) {    
-        //double t =  tanh(1.0 - R/R_cut) ;   // avoid using `tanh`, which costs more than `exp` 
-        double t =  1.0 - R/R_cut;        
+        //T t =  tanh(1.0 - R/R_cut) ;   // avoid using `tanh`, which costs more than `exp` 
+        T t =  1.0 - R/R_cut;        
         t = exp(2*t);
         t = (t-1) / (t+1);                
         f = t * t * t ;        
@@ -58,27 +60,29 @@ double Gfunction_t::cutoff(double R, double R_cut) {
     return f  ;
 }
 
-
-double Gfunction_t::get_cos(double Rij, double Rik, double Rjk) {
+template <typename T>
+T Gfunction_t<T>::get_cos(T Rij, T Rik, T Rjk) {
     //cosine of the angle between two vectors ij and ik    
-    double Rijxik = Rij*Rik ;    
+    T Rijxik = Rij*Rik ;    
     if ( Rijxik != 0 ) {
           return ( ( Rij*Rij + Rik*Rik - Rjk*Rjk )/ (2.0 * Rijxik) );
     } else {
-          return  numeric_limits<double>::infinity();
+          return  numeric_limits<T>::infinity();
     }
 }
 
-double Gfunction_t::get_Gradial(double  Rij, double Rs, double eta){
-     double G_rad = cutoff(Rij);     
+template <typename T>
+T Gfunction_t<T>::get_Gradial(T  Rij, T Rs, T eta){
+     T G_rad = cutoff(Rij);     
      if ( G_rad > 0 ) {
           G_rad *= exp( -eta * ( (Rij-Rs)*(Rij-Rs) )  )  ;
      }
      return G_rad;
 }
 
-double Gfunction_t::get_Gangular(double Rij, double Rik, double Rjk, double eta, double zeta, double lambd){    
-    double G_ang = cutoff(Rij)*cutoff(Rik)*cutoff(Rjk);    
+template <typename T>
+T Gfunction_t<T>::get_Gangular(T Rij, T Rik, T Rjk, T eta, T zeta, T lambd){    
+    T G_ang = cutoff(Rij)*cutoff(Rik)*cutoff(Rjk);    
     if ( G_ang > 0) {    
           G_ang *=   2 * pow( (1.0 + lambd* get_cos(Rij, Rik, Rjk))/2.0, zeta) 
                      * exp(-eta*  ( (Rij+Rik+Rjk)*(Rij+Rik+Rjk) ) );    
@@ -95,7 +99,8 @@ double Gfunction_t::get_Gangular(double Rij, double Rik, double Rjk, double eta,
 // but API are left as vectorized form for consecutive memory utilization and 
 // future compatible possibility with other linear algebra libraries.
 // 
-void Gfunction_t::cutoff(double* & rst, double* & Rij, size_t n, double R_cut) {    
+template <typename T>
+void Gfunction_t<T>::cutoff(T* & rst, T* & Rij, size_t n, T R_cut) {    
 #ifdef _OPENMP
 #pragma omp parallel for simd shared(rst, Rij, R_cut, n)
 #endif    
@@ -113,8 +118,8 @@ void Gfunction_t::cutoff(double* & rst, double* & Rij, size_t n, double R_cut) {
           Rdst[i] = 1.0;
     }    
     
-    double k = -1/R_cut;
-    cblas_daxpy( (const int) n , (const int) k, (const double*) Rrsc, 1, Rdst, 1);   // tmp = (1.0 - Rrsc[i]/R_cut)
+    T k = -1/R_cut;
+    cblas_daxpy( (const int) n , (const int) k, (const T*) Rrsc, 1, Rdst, 1);   // tmp = (1.0 - Rrsc[i]/R_cut)
     
     // if R<= R_cut,   dst = tanh(tmp) ^ 3
     // else, dst = 0.0
@@ -126,7 +131,7 @@ void Gfunction_t::cutoff(double* & rst, double* & Rij, size_t n, double R_cut) {
           if (Rrsc[i] > R_cut){
                Rdst[i]=0.0;          
           } else {
-               double t = tanh(Rdst[i]);
+               T t = tanh(Rdst[i]);
                Rdst[i] = t*t*t;
           };
     };
@@ -134,16 +139,19 @@ void Gfunction_t::cutoff(double* & rst, double* & Rij, size_t n, double R_cut) {
 };
 
 
-void Gfunction_t::get_cos(double * & rst, double * & Rij, double * & Rik, double * & Rjk, size_t n) {
+template <typename T>
+void Gfunction_t<T>::get_cos(T * & rst, T * & Rij, T * & Rik, T * & Rjk, size_t n) {
 #ifdef _OPENMP
 #pragma omp parallel for simd shared(rst, Rij, Rik, Rjk)
 #endif
   for (int i=0; i<n; i++){     
      rst[i] = get_cos(Rij[i], Rik[i], Rjk[i]);  
   }
-}
+};
 
-void Gfunction_t::get_Gradial(double* & rst, double* & Rij, size_t n, double Rs, double eta ){ 
+
+template <typename T>
+void Gfunction_t<T>::get_Gradial(T* & rst, T* & Rij, size_t n, T Rs, T eta ){ 
   cutoff(rst, Rij, n);
 #ifdef _OPENMP
 #pragma omp parallel for simd shared(rst, Rij, Rs, eta)
@@ -154,44 +162,71 @@ void Gfunction_t::get_Gradial(double* & rst, double* & Rij, size_t n, double Rs,
           rst[i] *= exp( -eta * ( (Rij[i]-Rs)*(Rij[i]-Rs) )  )  ;
      }
   } 
-}
+};
 
-void Gfunction_t::get_Gradial_add(double* & rst, double*& tmp, double* & Rij, size_t n, double Rs, double eta ){      
+
+template <>
+void Gfunction_t<double>::get_Gradial_add(double* & rst, double*& tmp, double* & Rij, size_t n, double Rs, double eta ){      
      get_Gradial(tmp, Rij, n, Rs, eta);
      cblas_daxpy((const int)n, 1.0, (const double*)tmp, 1, rst, 1);     
-}
+};
 
-void Gfunction_t::get_Gangular(double* & rst, double* & Rij, double* & Rik, double*&  Rjk, size_t n, double eta, double zeta, double lambd ){
+
+
+
+template <>
+void Gfunction_t<float>::get_Gradial_add(float* & rst, float*& tmp, float* & Rij, size_t n, float Rs, float eta ){      
+     get_Gradial(tmp, Rij, n, Rs, eta);
+     cblas_saxpy((const int)n, 1.0, (const float*)tmp, 1, rst, 1);     
+};
+
+
+
+
+template <typename T>
+void Gfunction_t<T>::get_Gangular(T* & rst, T* & Rij, T* & Rik, T*&  Rjk, size_t n, T eta, T zeta, T lambd ){
 #ifdef _OPENMP
 #pragma omp parallel for simd shared(rst, Rij, Rik, Rjk, eta, zeta, lambd)
 #endif
   for (int i=0; i<n; i++){
     rst[i]=get_Gangular(Rij[i], Rik[i], Rjk[i], eta, zeta, lambd);
   }
-}
+};
 
-
-void Gfunction_t::get_Gangular_add(double* & rst, double*& tmp, double* & Rij, double* & Rik, double*&  Rjk, size_t n, double eta, double zeta, double lambd ){
+template <>
+void Gfunction_t<double>::get_Gangular_add(double* & rst, double*& tmp, double* & Rij, double* & Rik, double*&  Rjk, size_t n, double eta, double zeta, double lambd ){
      get_Gangular(tmp, Rij, Rik, Rjk, n, eta, zeta, lambd);
      cblas_daxpy((const int)n, 1.0, (const double *)tmp, 1, rst, 1);
-}
+};
+
+
+template <>
+void Gfunction_t<float>::get_Gangular_add(float* & rst, float*& tmp, float* & Rij, float* & Rik, float*&  Rjk, size_t n, float eta, float zeta, float lambd ){
+     get_Gangular(tmp, Rij, Rik, Rjk, n, eta, zeta, lambd);
+     cblas_saxpy((const int)n, 1.0, (const float *)tmp, 1, rst, 1);
+};
+
+
 
 
 //==============================================================================================
 //
 // Gfunction class constructor/destructor
 //
-Gfunction_t::Gfunction_t(){
+template <typename T>
+Gfunction_t<T>::Gfunction_t(){
      colidx = nullptr;
      dist = nullptr;
      distT = nullptr;
 };
-Gfunction_t::~Gfunction_t(){
-     clearMemo(colidx);
-     clearMemo(dist);
-     clearMemo(distT);     
+
+template <typename T>
+Gfunction_t<T>::~Gfunction_t(){
+     clearMemo<idx_t>(colidx);
+     clearMemo<T>(dist);
+     clearMemo<T>(distT);     
      for(auto it=G.begin() ; it!=G.end(); it++){
-          clearMemo(it->second);
+          clearMemo<T>(it->second);
      };
 };
 
@@ -201,18 +236,32 @@ Gfunction_t::~Gfunction_t(){
 //
 
 // load distance matrix
-void Gfunction_t::load_distfile(const char* _distfile, int _titleline){
+template <typename T>
+void Gfunction_t<T>::load_distfile(const char* _distfile, int _titleline){
      timers.insert_random_timer( id, 0, "Read_distance_file");
      timers.timer_start(id);
      int ifread = read2DArrayfile(dist, ndimers, ndistcols, _distfile, _titleline);     
-     transpose_mtx(dist, distT, ndimers, ndistcols);     
+     transpose_mtx<T>(dist, distT, ndimers, ndistcols);     
+     timers.timer_end(id);
+};
+
+
+
+// load distance matrix and filt out samples that exceed a maximum value
+template <typename T>
+void Gfunction_t<T>::load_distfile(const char* _distfile, int _titleline, int _thredhold_col, T thredhold_max){
+     timers.insert_random_timer( id, 0, "Read_distance_file");
+     timers.timer_start(id);
+     int ifread = read2DArray_with_max_thredhold(dist, ndimers, ndistcols, _distfile, _titleline, _thredhold_col, thredhold_max);     
+     transpose_mtx<T>(dist, distT, ndimers, ndistcols);     
      timers.timer_end(id);
 };
 
 
 
 // load distance matrix column index 
-void Gfunction_t::load_dist_colidx(const char* _dist_idx_file){        // not implemented yet
+template <typename T>
+void Gfunction_t<T>::load_dist_colidx(const char* _dist_idx_file){        // not implemented yet
      if( strlen(_dist_idx_file)>0 ) {     
           cout << " Loading custom distance matrix colum index is not implemented yet !" << endl;         
           load_dist_colidx_default();     
@@ -221,7 +270,8 @@ void Gfunction_t::load_dist_colidx(const char* _dist_idx_file){        // not im
      }
 };    
 
-void Gfunction_t::load_dist_colidx_default(){ 
+template <typename T>
+void Gfunction_t<T>::load_dist_colidx_default(){ 
      model.load_default_atom_id(colidx, natom);
 };
 
@@ -230,7 +280,8 @@ void Gfunction_t::load_dist_colidx_default(){
 
 
 // load parameter matrix 
-void Gfunction_t::load_paramfile(const char* _paramfile){
+template <typename T>
+void Gfunction_t<T>::load_paramfile(const char* _paramfile){
      if ( strlen(_paramfile) > 0 ) {     
           GP.read_param_from_file(_paramfile, model); 
      } else {
@@ -238,7 +289,8 @@ void Gfunction_t::load_paramfile(const char* _paramfile){
      }
 };
 
-void Gfunction_t::load_paramfile_default(){  
+template <typename T>
+void Gfunction_t<T>::load_paramfile_default(){  
      GP.read_param_from_file("H_rad", model); 
      GP.read_param_from_file("H_ang", model);
      GP.read_param_from_file("O_rad", model);
@@ -250,7 +302,8 @@ void Gfunction_t::load_paramfile_default(){
 
 
 // load sequnece file
-void Gfunction_t::load_seq(const char* _seqfile){
+template <typename T>
+void Gfunction_t<T>::load_seq(const char* _seqfile){
      if ( strlen(_seqfile) >0 ){
           GP.read_seq_from_file(_seqfile, model);
      } else {
@@ -264,10 +317,9 @@ void Gfunction_t::load_seq(const char* _seqfile){
 
 
 
-
-
 // make G-fns
-void Gfunction_t::make_G(){      
+template <typename T>
+void Gfunction_t<T>::make_G(){      
      timers.insert_random_timer(id3, 1 , "Gf_run_all");
      timers.timer_start(id3);     
                
@@ -299,10 +351,10 @@ void Gfunction_t::make_G(){
           
           if( G_param_max_size.find(atom1_type) != G_param_max_size.end() ){
 
-               double** g;          
-               init_mtx_in_mem(g, G_param_max_size[atom1_type] , ndimers);  // initialize in memory g[param, dimer_idx]
+               T** g;          
+               init_mtx_in_mem<T>(g, G_param_max_size[atom1_type] , ndimers);  // initialize in memory g[param, dimer_idx]
                
-               double* tmp = new double[ndimers];  // a temporary space for cache
+               T* tmp = new T[ndimers];  // a temporary space for cache
                
                
                timers.insert_random_timer(id2, 2 , "Gfn_rad+ang_all");
@@ -325,7 +377,7 @@ void Gfunction_t::make_G(){
                               size_t nrow_params =  G_param_size[atom1_type][idx_atom12];
                               unsigned int icol = colidx[idx_atom1][idx_atom2] ; // col index of the distance to retrieve
                          
-                              double Rs, eta;                         
+                              T Rs, eta;                         
                               int idx_g_atom12 = G_param_start_idx[atom1_type][idx_atom12];
 
                               
@@ -360,7 +412,7 @@ void Gfunction_t::make_G(){
                                         unsigned int icol3 = colidx[idx_atom2][idx_atom3] ; // col index of the distance to retrieve
                                         size_t nrow_params =  GP.params[atom1_type][idx_atom123].size();                              
                                         
-                                        double lambd, zeta, eta;
+                                        T lambd, zeta, eta;
                                         int idx_g_atom123 = G_param_start_idx[atom1_type][idx_atom123];
 
                                         for(int i=0 ; i< nrow_params; i++){      
@@ -397,8 +449,8 @@ void Gfunction_t::make_G(){
 
 
 
-
-void Gfunction_t::make_G(const char* _distfile, int _titleline, const char* _colidxfile, const char* _paramfile, const char* _ordfile){     
+template <typename T>
+void Gfunction_t<T>::make_G(const char* _distfile, int _titleline, const char* _colidxfile, const char* _paramfile, const char* _ordfile){     
      
      load_distfile(_distfile, _titleline);     
      load_dist_colidx(_colidxfile);
@@ -408,9 +460,9 @@ void Gfunction_t::make_G(const char* _distfile, int _titleline, const char* _col
 }
 
 
-
-void Gfunction_t::norm_rows_in_mtx_by_col_vector(double*& src_mtx, size_t src_row, size_t src_col, double*& scale_vec, int offset){
-     // scale each row in a matrix by a column vector
+template <typename T>
+void Gfunction_t<T>::norm_rows_in_mtx_by_col_vector(T*& src_mtx, size_t src_row, size_t src_col, T*& scale_vec, int offset){
+     // scale each row (from offset index) in a matrix by a column vector
      #ifdef _OPENMP
      #pragma omp parallel for simd shared(src_mtx, src_row, src_col, scale_vec)
      #endif
@@ -419,14 +471,29 @@ void Gfunction_t::norm_rows_in_mtx_by_col_vector(double*& src_mtx, size_t src_ro
      }
 }
 
-
-size_t get_count_by_percent(double* src, size_t src_count, double percentage, double threshold){
+template <typename T>
+size_t get_count_by_percent(T* src, size_t src_count, T percentage, T threshold){
      size_t count =0;
      return count;
-     
 }
 
 
+
+
+
+
+
+//=================================================================================
+//
+// template realization
+void _NEVER_USED_INSTANLIZATION_GFUNCTION(){
+     Gfunction_t<double> g1;
+     Gfunction_t<float> g2;    
+}
+
+
+
+//================================================================================
 // tester
 /*
 int main(int argc, char** argv){ 

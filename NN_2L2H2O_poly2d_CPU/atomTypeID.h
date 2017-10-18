@@ -68,8 +68,8 @@ public:
      // Following functions are only used for water dimer mbpol NN model
      //=========================================================================
      
-     // loading a default setting for mbpol NN model 
-     void load_default_atom_id(double**& _idxary, size_t & _size);
+     // loading a default setting for mbpol NN model
+     void load_default_atom_id(idx_t **& _idxary, size_t & _size);
      
      
      

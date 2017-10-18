@@ -15,13 +15,8 @@
 #include <string>
 
 #include "utility.h"
+#include "atomTypeID.h"
 
-// Define the cblas library 
-#ifdef _USE_GSL
-#include <gsl/gsl_cblas.h>
-#elif _USE_MKL
-//#include <gsl/gsl_cblas.h>
-#endif
 
 
 #define FLAGSTART '-'
@@ -33,7 +28,10 @@ using namespace std;
 //==============================================================================
 //
 // Memory clear up
-void clearMemo(double** & data){
+// These definitions are put into header file
+/*
+template <typename T>
+void clearMemo(T** & data){
      if (data != nullptr) {
           if (data[0] != nullptr)  delete[] data[0];   
           delete[] data;
@@ -44,54 +42,69 @@ void clearMemo(double** & data){
 
 
 
-void clearMemo(std::vector<double**> & data){
+
+template <typename T>
+void clearMemo(std::vector<T**> & data){
      for (auto it=data.rbegin(); it!=data.rend(); it++){
-          clearMemo(*it);
+          clearMemo<T>(*it);
           data.pop_back();
      }
      return;
 }
 
 
-void clearMemo(std::map<std::string, double**> & data){
+
+template <typename T>
+void clearMemo(std::map<std::string, T**> & data){
      for (auto it=data.begin(); it!=data.end(); it++){
-          clearMemo(it->second);
+          clearMemo<T>(it->second);
           it->second = nullptr;
      }
      return;
 }
+*/
+
 
 
 //==============================================================================
 //
 // Initialize a matrix in consecutive memory
-bool init_mtx_in_mem(double** & data, size_t& rows, size_t& cols){
+template <typename T>
+bool init_mtx_in_mem(T** & data, size_t& rows, size_t& cols){
      try{
           if( rows*cols >0) {          
-               double * p = new double[rows*cols];
-               data = new double* [rows];
+               T * p = new T[rows*cols];
+               data = new T* [rows];
                #ifdef _OPENMP
                #pragma omp parallel for shared(data, p, rows, cols)
                #endif 
                for(int ii=0; ii<rows; ii++){                    
                     data[ii]=p+ii*cols;     
-                    memset(data[ii], 0, sizeof(double)*cols);       
+                    memset(data[ii], 0, sizeof(T)*cols);       
                }          
           }     
           return true;
      } catch (...){
-          clearMemo(data);   
+          clearMemo<T>(data);   
           return false;
      }
 }
+
+/*
+template bool init_mtx_in_mem<double>(double** & data, size_t& rows, size_t& cols);
+template bool init_mtx_in_mem<float>(float** & data, size_t& rows, size_t& cols);
+template bool init_mtx_in_mem<unsigned int>(unsigned int** & data, size_t& rows, size_t& cols);
+template bool init_mtx_in_mem<int>(int** & data, size_t& rows, size_t& cols);
+*/
 
 
 //==============================================================================
 //
 // Check if a string is a float number
+template <typename T>
 bool IsFloat( string& myString ) {
     std::istringstream iss(myString);
-    double f;
+    T f;
     iss >> skipws >> f; // skipws ignores leading whitespace
     // Check the entire string was consumed and if either failbit or badbit is set
     return iss.eof() && !iss.fail(); 
@@ -101,24 +114,25 @@ bool IsFloat( string& myString ) {
 //==============================================================================
 //
 // Read in a 2D array from file and save to  **data / rows / cols
-int read2DArrayfile(double** & data, size_t& rows, size_t& cols, const char* file, int titleline, int thredhold_col, double thredhold_max){
+template <typename T>
+int read2DArrayfile(T** & data, size_t& rows, size_t& cols, const char* file, int titleline){
     try { 
           
-          clearMemo(data);
+          clearMemo<T>(data);
           
           ifstream ifs(file);
           string line;
-          matrix_by_vector_t mtx;
+          matrix_by_vector_t<T> mtx;
           
           for (int i=0; i < titleline; i++){          
                getline(ifs,line);
           }
-          vector<double> onelinedata;
+          vector<T> onelinedata;
           while(getline(ifs, line)){          
                char* p = &line[0u];
                char* end;              
                onelinedata.clear();                              
-               for( double d = strtod(p, &end); p != end; d = strtod(p, &end) ) {
+               for( T d = strtod(p, &end); p != end; d = strtod(p, &end) ) {
                     p = end;                    
                     onelinedata.push_back(d);           
                };               
@@ -128,7 +142,7 @@ int read2DArrayfile(double** & data, size_t& rows, size_t& cols, const char* fil
           rows=mtx.size();
           cols=mtx[0].size();
           
-          init_mtx_in_mem(data, rows, cols);  
+          init_mtx_in_mem<T>(data, rows, cols);  
           
           #ifdef _OPENMP
           #pragma omp parallel for simd shared(data, mtx, rows)
@@ -146,22 +160,86 @@ int read2DArrayfile(double** & data, size_t& rows, size_t& cols, const char* fil
 }
 
 
+template <typename T>
+int read2DArray_with_max_thredhold(T** & data, size_t& rows, size_t& cols, const char* file, int titleline, int thredhold_col, T thredhold_max){
+    try { 
+          
+          clearMemo<T>(data);
+          
+          ifstream ifs(file);
+          string line;
+          matrix_by_vector_t<T> mtx;
+          
+          for (int i=0; i < titleline; i++){          
+               getline(ifs,line);
+          }
+          vector<T> onelinedata;
+          while(getline(ifs, line)){          
+               char* p = &line[0u];
+               char* end;              
+               onelinedata.clear();                              
+               for( T d = strtod(p, &end); p != end; d = strtod(p, &end) ) {
+                    p = end;                    
+                    onelinedata.push_back(d);           
+               };               
+               if (onelinedata.size()>0) {   
+                                                           
+                    if ( thredhold_col >=0) {           
+                         // when thredhold_index is non-negative, check the colum VS max
+                         if (onelinedata[thredhold_col] > thredhold_max) {
+                              continue;
+                         }
+                    } else {
+                         // when thredhold_index is negative, check the column from the end VS max
+                         if ( onelinedata[ onelinedata.size() + thredhold_col] > thredhold_max ) {
+                              continue;
+                         }                                             
+                    }
+                    mtx.push_back(onelinedata);                               
+               }                           
+          }          
+
+          rows=mtx.size();
+          cols=mtx[0].size();
+          
+          init_mtx_in_mem<T>(data, rows, cols);  
+          
+          #ifdef _OPENMP
+          #pragma omp parallel for simd shared(data, mtx, rows)
+          #endif                                      
+          for(int ii=0; ii<rows; ii++){
+               copy(mtx[ii].begin(), mtx[ii].end(), data[ii]);       
+          }          
+
+          mtx.clear();
+          return 0;                    
+    } catch (const std::exception& e) {
+        std::cerr << " ** Error ** : " << e.what() << std::endl;
+        return 1;
+    }
+}
+
+
+template <typename T>
+void transpose_mtx(T** & datrsc, T** & datdst, size_t& nrow_rsc, size_t& ncol_rsc)
+{
+     cout<< "Undefined action with this data type" << std::endl;
+};
+
 //==============================================================================
 //
 // Matrix transpose
-void transpose_mtx(double** & datrsc, double** & datdst, size_t& nrow_rsc, size_t& ncol_rsc){
+template <>
+void transpose_mtx<double>(double** & datrsc, double** & datdst, size_t& nrow_rsc, size_t& ncol_rsc){
      try{ 
      
-          if ( datdst== nullptr) init_mtx_in_mem(datdst, ncol_rsc, nrow_rsc);
-     
-         
-          // Switch row-col to col-row
-          /*
-          for(int ii=0; ii<nrow_rsc; ii++){
-               for(int jj=0; jj<ncol_rsc; jj++){
-                    datdst[jj][ii] = datrsc[ii][jj];
-               }
-          }*/
+          if ( datdst== nullptr) init_mtx_in_mem<double>(datdst, ncol_rsc, nrow_rsc);         
+          // Switch row-col to col-row         
+          //for(int ii=0; ii<nrow_rsc; ii++){
+          //     for(int jj=0; jj<ncol_rsc; jj++){
+          //          datdst[jj][ii] = datrsc[ii][jj];
+          //     }
+          //}
           
           // best way to transpose a c++ matrix is copying by row    
           #ifdef _OPENMP
@@ -171,23 +249,83 @@ void transpose_mtx(double** & datrsc, double** & datdst, size_t& nrow_rsc, size_
                cblas_dcopy( (const int) ncol_rsc, (const double*) &datrsc[irow][0], 1, &datdst[0][irow], (const int) nrow_rsc);          
           }
           
-          // Test copying by col
-          /*
-          for(int icol = 0; icol< ncol_rsc; icol++){          
-               cblas_dcopy(nrow_rsc, &datrsc[0][icol], ncol_rsc, &datdst[icol][0], 1);          
-          }*/
+          // Test copying by col          
+          //for(int icol = 0; icol< ncol_rsc; icol++){          
+          //     cblas_dcopy(nrow_rsc, &datrsc[0][icol], ncol_rsc, &datdst[icol][0], 1);          
+          //}
           
      } catch (const std::exception& e) {
         std::cerr << " ** Error ** : " << e.what() << std::endl;
      }
+};
+
+template <>
+void transpose_mtx<float>(float** & datrsc, float** & datdst, size_t& nrow_rsc, size_t& ncol_rsc){
+     try{ 
+     
+          if ( datdst== nullptr) init_mtx_in_mem<float>(datdst, ncol_rsc, nrow_rsc);
+
+          #ifdef _OPENMP
+          #pragma omp parallel for simd shared(datrsc, datdst, nrow_rsc, ncol_rsc)
+          #endif      
+          for(int irow = 0; irow< nrow_rsc; irow++){          
+               cblas_scopy( (const int) ncol_rsc, (const float*) &datrsc[irow][0], 1, &datdst[0][irow], (const int) nrow_rsc);          
+          }                  
+     } catch (const std::exception& e) {
+        std::cerr << " ** Error ** : " << e.what() << std::endl;
+     }
+};
+
+
+
+//================================================================================
+//
+//template functions realization
+template <typename T>
+void _NEVER_USED_INSTANLIZATION_UTILITY(){
+     T** dptr;
+     size_t rows =1 , cols=1;     
+     init_mtx_in_mem<T>(dptr, rows, cols);
+
+     vector<T**> vec;          
+     map<string, T**> mp;     
+     
+     string mystring = "SOME";
+     
+     IsFloat<T>(mystring);
+     
+     read2DArrayfile<T>(dptr, rows, cols, "hello");
+     read2DArray_with_max_thredhold<T>(dptr, rows, cols, "Hello", 1, 1, 0);          
+     transpose_mtx<T>(dptr, dptr, rows, cols);     
+     clearMemo<T>(vec);     
+     clearMemo<T>(mp);    
+     clearMemo<T>(dptr);
+          
 }
+
+
+/*
+template class _NEVER_USED_INSTANLIZATION_UTILITY<double> ;
+template class _NEVER_USED_INSTANLIZATION_UTILITY<float> ;
+template class _NEVER_USED_INSTANLIZATION_UTILITY<unsigned int> ;
+template class _NEVER_USED_INSTANLIZATION_UTILITY<int> ;
+*/
+
+void NEVER_USED_INSTANLIZATION_UTILITY(){
+     _NEVER_USED_INSTANLIZATION_UTILITY<double>();
+     _NEVER_USED_INSTANLIZATION_UTILITY<float>() ;
+     _NEVER_USED_INSTANLIZATION_UTILITY<idx_t>();
+     _NEVER_USED_INSTANLIZATION_UTILITY<int>();
+     _NEVER_USED_INSTANLIZATION_UTILITY<size_t>();
+}
+
 
 
 //==============================================================================
 //
 // Command line arguments manipulation
 //
-// Ignore the symbol(s) a argument starts with 
+// Ignore the symbol(s) a argument starts with
 int stringRemoveDelimiter(char delimiter, const char *string)
 {
     int string_start = 0;
@@ -303,4 +441,6 @@ bool getCmdLineArgumentString(const int argc, const char **argv,
     }
     return bFound;
 }
+
+
 

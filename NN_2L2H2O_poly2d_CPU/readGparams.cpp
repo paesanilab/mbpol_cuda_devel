@@ -16,15 +16,27 @@
 // The comment line in "seq.file" starts with following symbol
 #define COMMENT_IN_SEQ '#'
 
-
 using namespace std;
 
-int Gparams_t::read_param_from_file(const char* p, atom_Type_ID_t & model){
+
+template<>
+double Gparams_t<double>::return_a_number(string _string){
+     return  stod ( _string );     
+}
+
+template<>
+float Gparams_t<float>::return_a_number(string _string){
+     return  stof ( _string );     
+}
+
+
+
+template<typename T>
+int Gparams_t<T>::read_param_from_file(const char* p, atom_Type_ID_t & model){
     try {
           ifstream ifs(p);
           string line;       
-          
-          
+                   
           while(getline(ifs, line)){      // get every line as in-file-stream
                istringstream iss(line);   // get every line as in-string-stream 
                vector<string> record;
@@ -39,17 +51,17 @@ int Gparams_t::read_param_from_file(const char* p, atom_Type_ID_t & model){
                   
                }
                
-               vector<double> currnumbers;   // saved numbers in current line
+               vector<T> currnumbers;   // saved numbers in current line
                string atom_type = "";        // the first atom in the line is the main atom 
                idx_t atom_relation =1;       // the relationship index ( = multiple of atom type index other than the main atom )
                
                // for every line: 
                //        - find param's atom type by first string
                //        - find all other atoms types, and generate a unique matrix mapping index by the multiplication of atom type index
-               //        - save all numbers (double precision) as vector of vector and map it by atom type + matrix mapping index 
+               //        - save all numbers (double/single precision) as vector of vector and map it by atom type + matrix mapping index 
                for(auto it=record.begin(); it!=record.end(); it++){                              
-                    if ( IsFloat(*it)){
-                         double f = stod ( *it);               
+                    if ( IsFloat<T>(*it)){
+                         T f = return_a_number(*it);               
                          currnumbers.push_back(f);               
                     } else {                        
                          if(atom_type == "")  atom_type = *it;
@@ -81,8 +93,8 @@ int Gparams_t::read_param_from_file(const char* p, atom_Type_ID_t & model){
 
 
 
-
-int Gparams_t::read_seq_from_file(const char* _file, atom_Type_ID_t & model) {
+template<typename T>
+int Gparams_t<T>::read_seq_from_file(const char* _file, atom_Type_ID_t & model) {
      try {
           ifstream ifs(_file);
           string line;       
@@ -139,7 +151,8 @@ int Gparams_t::read_seq_from_file(const char* _file, atom_Type_ID_t & model) {
     }
 }
 
-void Gparams_t::make_seq_default(){     
+template<typename T>
+void Gparams_t<T>::make_seq_default(){     
      for(auto it=params.begin(); it!=params.end(); it++){          
           for(auto it2=it->second.begin(); it2!=it->second.end(); it2++){
                seq[it->first].push_back(it2->first);           
@@ -147,6 +160,19 @@ void Gparams_t::make_seq_default(){
      }
 }
 
+
+
+//===============================================================================
+//
+// template realization
+void _NEVER_USED_INSTANLIZATION_READGPARAMS(){
+     Gparams_t<float> g1;
+     Gparams_t<double> g2;     
+}
+
+
+
+//===============================================================================
 // Tester
 /*
 int main(int argc, char** argv) {
