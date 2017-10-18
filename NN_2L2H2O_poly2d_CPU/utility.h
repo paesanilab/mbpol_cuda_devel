@@ -1,11 +1,27 @@
 #ifndef UTILITY_H
 #define UTILITY_H
 
-#include <map>
-#include <vector>
-#include <string>
-#include <cstddef>
+
+
 #include <limits>
+#include <cstdlib>
+#include <iomanip>
+#include <utility>
+#include <cstddef>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+#include <iostream>
+#include <sstream>
+#include <fstream>
+
+#include <vector>
+#include <map>
+#include <string>
+
+#include "utility.h"
+#include "atomTypeID.h"
 
 // Define the cblas library 
 #ifdef _USE_GSL
@@ -28,10 +44,10 @@ using matrix_by_vector_t = std::vector<std::vector<T> >;
 //
 // Check if a string is a float number
 template <typename T>
-bool IsFloat( string& myString ) {
+bool IsFloat( std::string& myString ) {
     std::istringstream iss(myString);
     T f;
-    iss >> skipws >> f; // skipws ignores leading whitespace
+    iss >> std::skipws >> f; // skipws ignores leading whitespace
     // Check the entire string was consumed and if either failbit or badbit is set
     return iss.eof() && !iss.fail(); 
 }
@@ -76,12 +92,18 @@ void clearMemo(std::map<std::string, T**> & data){
 
 
 
-template<typename T>
-bool init_mtx_in_mem(T** & data, size_t& rows, size_t& cols);
-/*{
+
+
+
+
+//==============================================================================
+//
+// Initialize a matrix in consecutive memory
+template <typename T>
+bool init_mtx_in_mem(T** & data, size_t& rows, size_t& cols){
      try{
           if( rows*cols >0) {          
-               T * p = new T[rows*cols]();
+               T * p = new T[rows*cols];
                data = new T* [rows];
                #ifdef _OPENMP
                #pragma omp parallel for shared(data, p, rows, cols)
@@ -96,7 +118,7 @@ bool init_mtx_in_mem(T** & data, size_t& rows, size_t& cols);
           clearMemo<T>(data);   
           return false;
      }
-};*/
+};
 
 
 
@@ -105,10 +127,9 @@ bool init_mtx_in_mem(T** & data, size_t& rows, size_t& cols);
 
 //==============================================================================
 //
-// Read in 2D array via file
+// Read in a 2D array from file and save to  **data / rows / cols
 template <typename T>
-int read2DArrayfile(T** & data, size_t& rows, size_t& cols, const char* file, int titleline=0);
-/*{
+int read2DArrayfile(T** & data, size_t& rows, size_t& cols, const char* file, int titleline=0){
     try { 
           
           clearMemo<T>(data);
@@ -150,17 +171,11 @@ int read2DArrayfile(T** & data, size_t& rows, size_t& cols, const char* file, in
         std::cerr << " ** Error ** : " << e.what() << std::endl;
         return 1;
     }
-};*/
+};
 
-// Read in 2D array via file with a specific maximum limit
-//
-// The `thredhold_col` specifies which column will be tested against thredhold value.
-// [0, 1, 2 ...] specifies the index from head
-// [-1, -2, -3 ...] specifies the index from end, as in Python
-//
+
 template <typename T>
-int read2DArray_with_max_thredhold(T** & data, size_t& rows, size_t& cols, const char* file, int titleline=0, int thredhold_col=0, T thredhold_max=std::numeric_limits<T>::max());
-/*({
+int read2DArray_with_max_thredhold(T** & data, size_t& rows, size_t& cols, const char* file, int titleline=0, int thredhold_col=0, T thredhold_max=std::numeric_limits<T>::max()){
     try { 
           
           clearMemo<T>(data);
@@ -216,15 +231,18 @@ int read2DArray_with_max_thredhold(T** & data, size_t& rows, size_t& cols, const
         std::cerr << " ** Error ** : " << e.what() << std::endl;
         return 1;
     }
-};*/
+};
 
+
+
+//========================================================================================
 // 2D array transpose
 //
 template <typename T>
-void transpose_mtx(T** & datrsc, T** & datdst, size_t& nrow_rsc, size_t& ncol_rsc);
-/*{
+void transpose_mtx(T** & datrsc, T** & datdst, size_t& nrow_rsc, size_t& ncol_rsc)
+{
      std::cout<< "Undefined action with this data type" << std::endl;
-};*/
+};
 
 /*
 template <>

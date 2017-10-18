@@ -36,17 +36,11 @@ using namespace std;
 
 
 
-const int COL_RAD_RS = 3;
-const int COL_RAD_ETA = 2; 
-const int COL_ANG_ETA = 2;
-const int COL_ANG_ZETA = 4;
-const int COL_ANG_LAMBD=3;
-
-
 //===========================================================================================
 //
 // Elementary functions 
 //
+/*
 template <typename T>
 T Gfunction_t<T>::cutoff(T R, T R_cut) {
     T f=0.0;
@@ -89,7 +83,7 @@ T Gfunction_t<T>::get_Gangular(T Rij, T Rik, T Rjk, T eta, T zeta, T lambd){
     } 
     return G_ang ;    
 }
-
+*/
 
 
 //===========================================================================================
@@ -99,6 +93,7 @@ T Gfunction_t<T>::get_Gangular(T Rij, T Rik, T Rjk, T eta, T zeta, T lambd){
 // but API are left as vectorized form for consecutive memory utilization and 
 // future compatible possibility with other linear algebra libraries.
 // 
+/*
 template <typename T>
 void Gfunction_t<T>::cutoff(T* & rst, T* & Rij, size_t n, T R_cut) {    
 #ifdef _OPENMP
@@ -110,33 +105,31 @@ void Gfunction_t<T>::cutoff(T* & rst, T* & Rij, size_t n, T R_cut) {
 // Here are some efforts on vectorizing the function. 
 // But since the BLAS does not support elementary functions, 
 // the efficiency is not good.
-/*
-#ifdef _OPENMP
-#pragma omp parallel for simd shared(Rdst,n)
-#endif
-    for (int i=0; i<n; i++){
-          Rdst[i] = 1.0;
-    }    
-    
-    T k = -1/R_cut;
-    cblas_daxpy( (const int) n , (const int) k, (const T*) Rrsc, 1, Rdst, 1);   // tmp = (1.0 - Rrsc[i]/R_cut)
+//#ifdef _OPENMP
+//#pragma omp parallel for simd shared(Rdst,n)
+//#endif
+//    for (int i=0; i<n; i++){
+//          Rdst[i] = 1.0;
+//    }        
+//    T k = -1/R_cut;
+//    cblas_daxpy( (const int) n , (const int) k, (const T*) Rrsc, 1, Rdst, 1);   // tmp = (1.0 - Rrsc[i]/R_cut)
     
     // if R<= R_cut,   dst = tanh(tmp) ^ 3
     // else, dst = 0.0
     
-#ifdef _OPENMP
-#pragma omp parallel for simd shared(Rdst, Rrsc, R_cut, n)
-#endif    
-    for (int i=0; i<n; i++){
-          if (Rrsc[i] > R_cut){
-               Rdst[i]=0.0;          
-          } else {
-               T t = tanh(Rdst[i]);
-               Rdst[i] = t*t*t;
-          };
-    };
-*/
-};
+//#ifdef _OPENMP
+//#pragma omp parallel for simd shared(Rdst, Rrsc, R_cut, n)
+//#endif    
+//    for (int i=0; i<n; i++){
+//          if (Rrsc[i] > R_cut){
+//               Rdst[i]=0.0;          
+//          } else {
+//               T t = tanh(Rdst[i]);
+//               Rdst[i] = t*t*t;
+//          };
+//    };
+
+//};
 
 
 template <typename T>
@@ -163,7 +156,7 @@ void Gfunction_t<T>::get_Gradial(T* & rst, T* & Rij, size_t n, T Rs, T eta ){
      }
   } 
 };
-
+*/
 
 template <>
 void Gfunction_t<double>::get_Gradial_add(double* & rst, double*& tmp, double* & Rij, size_t n, double Rs, double eta ){      
@@ -182,7 +175,7 @@ void Gfunction_t<float>::get_Gradial_add(float* & rst, float*& tmp, float* & Rij
 
 
 
-
+/*
 template <typename T>
 void Gfunction_t<T>::get_Gangular(T* & rst, T* & Rij, T* & Rik, T*&  Rjk, size_t n, T eta, T zeta, T lambd ){
 #ifdef _OPENMP
@@ -192,7 +185,7 @@ void Gfunction_t<T>::get_Gangular(T* & rst, T* & Rij, T* & Rik, T*&  Rjk, size_t
     rst[i]=get_Gangular(Rij[i], Rik[i], Rjk[i], eta, zeta, lambd);
   }
 };
-
+*/
 template <>
 void Gfunction_t<double>::get_Gangular_add(double* & rst, double*& tmp, double* & Rij, double* & Rik, double*&  Rjk, size_t n, double eta, double zeta, double lambd ){
      get_Gangular(tmp, Rij, Rik, Rjk, n, eta, zeta, lambd);
@@ -213,6 +206,7 @@ void Gfunction_t<float>::get_Gangular_add(float* & rst, float*& tmp, float* & Ri
 //
 // Gfunction class constructor/destructor
 //
+/*
 template <typename T>
 Gfunction_t<T>::Gfunction_t(){
      colidx = nullptr;
@@ -229,12 +223,13 @@ Gfunction_t<T>::~Gfunction_t(){
           clearMemo<T>(it->second);
      };
 };
+*/
 
 //================================================================================================
 //
 // Gfunction utilities
 //
-
+/*
 // load distance matrix
 template <typename T>
 void Gfunction_t<T>::load_distfile(const char* _distfile, int _titleline){
@@ -311,13 +306,14 @@ void Gfunction_t<T>::load_seq(const char* _seqfile){
      }
 };
 
+*/
 
 
 
 
-
-
+//=================================================================================
 // make G-fns
+/*
 template <typename T>
 void Gfunction_t<T>::make_G(){      
      timers.insert_random_timer(id3, 1 , "Gf_run_all");
@@ -458,8 +454,13 @@ void Gfunction_t<T>::make_G(const char* _distfile, int _titleline, const char* _
      load_seq(_ordfile);         
      make_G();
 }
+*/
 
 
+//=================================================================================
+// Normalization functions
+//
+/*
 template <typename T>
 void Gfunction_t<T>::norm_rows_in_mtx_by_col_vector(T*& src_mtx, size_t src_row, size_t src_col, T*& scale_vec, int offset){
      // scale each row (from offset index) in a matrix by a column vector
@@ -476,7 +477,7 @@ size_t get_count_by_percent(T* src, size_t src_count, T percentage, T threshold)
      size_t count =0;
      return count;
 }
-
+*/
 
 
 

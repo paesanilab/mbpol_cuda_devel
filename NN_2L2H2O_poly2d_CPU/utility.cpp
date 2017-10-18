@@ -69,6 +69,7 @@ void clearMemo(std::map<std::string, T**> & data){
 //==============================================================================
 //
 // Initialize a matrix in consecutive memory
+/*
 template <typename T>
 bool init_mtx_in_mem(T** & data, size_t& rows, size_t& cols){
      try{
@@ -89,18 +90,14 @@ bool init_mtx_in_mem(T** & data, size_t& rows, size_t& cols){
           return false;
      }
 }
-
-/*
-template bool init_mtx_in_mem<double>(double** & data, size_t& rows, size_t& cols);
-template bool init_mtx_in_mem<float>(float** & data, size_t& rows, size_t& cols);
-template bool init_mtx_in_mem<unsigned int>(unsigned int** & data, size_t& rows, size_t& cols);
-template bool init_mtx_in_mem<int>(int** & data, size_t& rows, size_t& cols);
 */
+
 
 
 //==============================================================================
 //
 // Check if a string is a float number
+/*
 template <typename T>
 bool IsFloat( string& myString ) {
     std::istringstream iss(myString);
@@ -109,11 +106,13 @@ bool IsFloat( string& myString ) {
     // Check the entire string was consumed and if either failbit or badbit is set
     return iss.eof() && !iss.fail(); 
 }
+*/
 
 
 //==============================================================================
 //
 // Read in a 2D array from file and save to  **data / rows / cols
+/*
 template <typename T>
 int read2DArrayfile(T** & data, size_t& rows, size_t& cols, const char* file, int titleline){
     try { 
@@ -218,17 +217,23 @@ int read2DArray_with_max_thredhold(T** & data, size_t& rows, size_t& cols, const
         return 1;
     }
 }
+*/
 
 
+
+//==============================================================================
+//
+// Matrix transpose
+/*
 template <typename T>
 void transpose_mtx(T** & datrsc, T** & datdst, size_t& nrow_rsc, size_t& ncol_rsc)
 {
      cout<< "Undefined action with this data type" << std::endl;
 };
+*/
 
-//==============================================================================
-//
-// Matrix transpose
+
+// Function definition for a specific type should be left in cpp file
 template <>
 void transpose_mtx<double>(double** & datrsc, double** & datdst, size_t& nrow_rsc, size_t& ncol_rsc){
      try{ 
@@ -280,7 +285,7 @@ void transpose_mtx<float>(float** & datrsc, float** & datdst, size_t& nrow_rsc, 
 
 //================================================================================
 //
-//template functions realization
+//template functions instanilization
 template <typename T>
 void _NEVER_USED_INSTANLIZATION_UTILITY(){
      T** dptr;

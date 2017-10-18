@@ -13,8 +13,7 @@
 #include "utility.h"
 
 
-// The comment line in "seq.file" starts with following symbol
-#define COMMENT_IN_SEQ '#'
+
 
 using namespace std;
 
@@ -30,7 +29,7 @@ float Gparams_t<float>::return_a_number(string _string){
 }
 
 
-
+/*
 template<typename T>
 int Gparams_t<T>::read_param_from_file(const char* p, atom_Type_ID_t & model){
     try {
@@ -159,7 +158,7 @@ void Gparams_t<T>::make_seq_default(){
           }
      }
 }
-
+*/
 
 
 //===============================================================================

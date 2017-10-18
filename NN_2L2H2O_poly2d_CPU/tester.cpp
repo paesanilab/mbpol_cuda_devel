@@ -23,6 +23,8 @@
 #include <gsl/gsl_cblas.h>
 #elif _USE_MKL
 //#include <gsl/gsl_cblas.h>
+#else
+#include <gsl/gsl_cblas.h>
 #endif
 
 #include <omp.h>
@@ -50,8 +52,8 @@ int main(int argc, char** argv){
           return 0;    
      } 
 
-     Gfunction_t gf;     // the G-function
-     
+     Gfunction_t<double> gf;     // the G-function
+     /*
      // distance file headline
      int distheadline = getCmdLineArgumentInt(argc, (const char **)argv, FLAG_DISTFILE_HEADLINE);     
      if(distheadline==0) distheadline=1;     // a special line for test case
@@ -96,5 +98,5 @@ int main(int argc, char** argv){
           }
      }
     
-     return 0;
+*/     return 0;
 }
