@@ -175,7 +175,7 @@ int read2DArrayfile(T** & data, size_t& rows, size_t& cols, const char* file, in
 
 
 template <typename T>
-int read2DArray_with_max_thredhold(T** & data, size_t& rows, size_t& cols, const char* file, int titleline=0, int thredhold_col=0, T thredhold_max=std::numeric_limits<T>::max()){
+int read2DArray_with_max_thredhold(T** & data, size_t& rows, size_t& cols, const char* file, int titleline=0, int thredhold_col=0, T thredhold_max=std::numeric_limits<T>::min()){
     try { 
           
           clearMemo<T>(data);
@@ -244,9 +244,11 @@ void transpose_mtx(T** & datrsc, T** & datdst, size_t& nrow_rsc, size_t& ncol_rs
      std::cout<< "Undefined action with this data type" << std::endl;
 };
 
-/*
+
 template <>
-void transpose_mtx<double>(double** & datrsc, double** & datdst, size_t& nrow_rsc, size_t& ncol_rsc){
+void transpose_mtx<double>(double** & datrsc, double** & datdst, size_t& nrow_rsc, size_t& ncol_rsc);
+/*
+{
      try{ 
      
           if ( datdst== nullptr) init_mtx_in_mem<double>(datdst, ncol_rsc, nrow_rsc);
@@ -277,9 +279,11 @@ void transpose_mtx<double>(double** & datrsc, double** & datdst, size_t& nrow_rs
         std::cerr << " ** Error ** : " << e.what() << std::endl;
      }
 };
+*/
 
 template <>
-void transpose_mtx<float>(float** & datrsc, float** & datdst, size_t& nrow_rsc, size_t& ncol_rsc){
+void transpose_mtx<float>(float** & datrsc, float** & datdst, size_t& nrow_rsc, size_t& ncol_rsc);
+/*{
      try{ 
      
           if ( datdst== nullptr) init_mtx_in_mem<float>(datdst, ncol_rsc, nrow_rsc);
