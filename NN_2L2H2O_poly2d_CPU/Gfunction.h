@@ -19,7 +19,7 @@
 #elif _USE_MKL
 //#include <gsl/gsl_cblas.h>
 #else 
-#include <gsl/gsl_cblas.h>
+//#include <gsl/gsl_cblas.h>
 #endif
 
 
@@ -110,35 +110,6 @@ void cutoff(T* & rst, T* & Rij, size_t n, T R_cut=10) {
     for (int i=0; i<n; i++){
           rst[i] = cutoff(Rij[i], R_cut);
     }             
-// Here are some efforts on vectorizing the function. 
-// But since the BLAS does not support elementary functions, 
-// the efficiency is not good.
-/*
-#ifdef _OPENMP
-#pragma omp parallel for simd shared(Rdst,n)
-#endif
-    for (int i=0; i<n; i++){
-          Rdst[i] = 1.0;
-    }    
-    
-    T k = -1/R_cut;
-    cblas_daxpy( (const int) n , (const int) k, (const T*) Rrsc, 1, Rdst, 1);   // tmp = (1.0 - Rrsc[i]/R_cut)
-    
-    // if R<= R_cut,   dst = tanh(tmp) ^ 3
-    // else, dst = 0.0
-    
-#ifdef _OPENMP
-#pragma omp parallel for simd shared(Rdst, Rrsc, R_cut, n)
-#endif    
-    for (int i=0; i<n; i++){
-          if (Rrsc[i] > R_cut){
-               Rdst[i]=0.0;          
-          } else {
-               T t = tanh(Rdst[i]);
-               Rdst[i] = t*t*t;
-          };
-    };
-*/
 };
 
 
@@ -169,7 +140,27 @@ void get_Gradial(T* & rst, T* & Rij, size_t n, T Rs, T eta ){
 
 
 
-void get_Gradial_add(T* & rst, T*& tmp, T* & Rij, size_t n, T Rs, T eta );
+void get_Gradial_add(T* & rst, T* & Rij, size_t n, T Rs, T eta , T* tmp = nullptr ){
+     if (tmp == nullptr){
+          tmp = new T[n]();
+          get_Gradial(tmp, Rij, n, Rs, eta);
+          #ifdef _OPENMP
+          #pragma omp parallel for simd shared(rst, tmp, n)
+          #endif            
+          for (int ii=0; ii<n; ii++){
+               rst[ii] += tmp[ii] ;
+          }  
+          delete[] tmp;          
+     } else {
+          get_Gradial(tmp, Rij, n, Rs, eta);
+          #ifdef _OPENMP
+          #pragma omp parallel for simd shared(rst, tmp, n)
+          #endif            
+          for (int ii=0; ii<n; ii++){
+               rst[ii] += tmp[ii] ;
+          }  
+     }
+};
  
 
 
@@ -184,7 +175,27 @@ void get_Gangular(T* & rst, T* & Rij, T* & Rik, T*&  Rjk, size_t n, T eta, T zet
 };
 
 
-void get_Gangular_add(T* & rst, T*& tmp, T* & Rij, T* & Rik, T*&  Rjk, size_t n, T eta, T zeta, T lambd );
+void get_Gangular_add(T* & rst, T* & Rij, T* & Rik, T*&  Rjk, size_t n, T eta, T zeta, T lambd, T* tmp = nullptr ){
+     if (tmp == nullptr){
+          tmp = new T[n]();     
+          get_Gangular(tmp, Rij, Rik, Rjk, n, eta, zeta, lambd);
+          #ifdef _OPENMP
+          #pragma omp parallel for simd shared(rst, tmp, n)
+          #endif            
+          for (int ii=0; ii<n; ii++){
+               rst[ii] += tmp[ii] ;
+          }  
+          delete[] tmp;
+     } else {
+          get_Gangular(tmp, Rij, Rik, Rjk, n, eta, zeta, lambd);
+          #ifdef _OPENMP
+          #pragma omp parallel for simd shared(rst, tmp, n)
+          #endif            
+          for (int ii=0; ii<n; ii++){
+               rst[ii] += tmp[ii] ;
+          }      
+     }
+};
 
 
 
@@ -281,6 +292,8 @@ void load_distfile(const char* _distfile, int _titleline=0, int _thredhold_col=0
      }
      transpose_mtx<T>(dist, distT, ndimers, ndistcols);     
      timers.timer_end(id);
+     
+    //std::cout << " READ in count of dimers = " << ndimers << std::endl;
 };
 
 
@@ -420,7 +433,7 @@ void make_G(){
                                    eta  = GP.params[atom1_type][idx_atom12][i][COL_RAD_ETA] ;                                                                    
                                    timers.insert_random_timer(id, idx_atom12, "GRadial");
                                    timers.timer_start(id);
-                                   get_Gradial_add(g[idx_g_atom12+i], tmp, distT[icol], ndimers, Rs, eta);         
+                                   get_Gradial_add(g[idx_g_atom12+i], distT[icol], ndimers, Rs, eta, tmp);         
                                    timers.timer_end(id);
                               }   
                          }
@@ -455,7 +468,7 @@ void make_G(){
                                              zeta  = GP.params[atom1_type][idx_atom123][i][COL_ANG_ZETA];                    
                                              timers.insert_random_timer(id, idx_atom123, "GAngular");
                                              timers.timer_start(id);
-                                             get_Gangular_add(g[idx_g_atom123+i], tmp, distT[icol], distT[icol2], distT[icol3], ndimers, eta, zeta, lambd);         
+                                             get_Gangular_add(g[idx_g_atom123+i], distT[icol], distT[icol2], distT[icol3], ndimers, eta, zeta, lambd, tmp);         
                                              timers.timer_end(id, true, false);        
                                         } 
                                    } 
@@ -484,9 +497,9 @@ void make_G(){
 
 
 
-void make_G(const char* _distfile, int _titleline, const char* _colidxfile, const char* _paramfile, const char* _ordfile){     
+void make_G(const char* _distfile, int _titleline, const char* _colidxfile, const char* _paramfile, const char* _ordfile, int _thredhold_col=0, T thredhold_max=std::numeric_limits<T>::min()){     
      
-     load_distfile(_distfile, _titleline);     
+     load_distfile(_distfile, _titleline, _thredhold_col, thredhold_max);     
      load_dist_colidx(_colidxfile);
      load_paramfile(_paramfile);
      load_seq(_ordfile);         
@@ -502,27 +515,46 @@ void make_G(const char* _distfile, int _titleline, const char* _colidxfile, cons
 // Normalization functions
 //
 // G-function Normalization
-//void norm_rows_in_mtx_by_col_vector(T* & src_mtx, size_t src_row, size_t src_col, T* & scale_vec, int offset=0);
-//size_t get_count_by_percent(T* src, size_t src_count, T percentage);
-
-void norm_rows_in_mtx_by_col_vector(T*& src_mtx, size_t src_row, size_t src_col, T*& scale_vec, int offset){
-     // scale each row (from offset index) in a matrix by a column vector
-     #ifdef _OPENMP
-     #pragma omp parallel for simd shared(src_mtx, src_row, src_col, scale_vec)
-     #endif
-     for(int i = 0; i< src_row; i++){     
-          cblas_dscal(src_col-offset, scale_vec[i], src_mtx+i*src_col+offset, 1);
+void norm_G_by_maxabs_in_first_percent(double percent){
+     size_t max_norm_count = (size_t) ndimers*percent;
+     for(auto it = G.begin(); it!=G.end(); it++){
+          idx_t atom_idx = it->first;
+          std::string atom_type = model.atoms[atom_idx]->type;
+          size_t   rows = G_param_max_size[atom_type];
+          size_t & cols = ndimers;
+          norm_rows_by_maxabs_in_each_row<T>(*(it->second), rows, cols, 0, max_norm_count, 0, -1);
      }
 }
 
 
-size_t get_count_by_percent(T* src, size_t src_count, T percentage, T threshold){
-     size_t count =0;
-     return count;
-}
-
-
-
 };
+
+
+
+// Functions specialization for a type. Implementations are in .cpp
+#if defined (_USE_GSL) || defined (_USE_MKL)
+
+template <>
+void Gfunction_t<double>::get_Gradial_add(double* & rst, double* & Rij, size_t n, double Rs, double eta, double* tmp );
+
+template <>
+void Gfunction_t<float>::get_Gradial_add(float* & rst, float* & Rij, size_t n, float Rs, float eta , float* tmp );
+
+template <>
+void Gfunction_t<double>::get_Gangular_add(double* & rst, double* & Rij, double* & Rik, double*&  Rjk, size_t n, double eta, double zeta, double lambd , double* tmp);
+
+template <>
+void Gfunction_t<float>::get_Gangular_add(float* & rst, float* & Rij, float* & Rik, float*&  Rjk, size_t n, float eta, float zeta, float lambd , float* tmp );
+
+#endif
+
+
+
+
+
+
+
+
+
 
 #endif

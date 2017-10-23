@@ -43,14 +43,21 @@ endif
 
 
 # Libraries
-LDFLAGS   := -lgslcblas -fopenmp
+LDFLAGS   :=  
+
 # GSL / MKL library
 ifdef USE_MKL
 LDFLAGS   += -D_USE_MKL
 else ifdef USE_GSL 
-LDFLAGS   += -D_USE_GSL
+LDFLAGS   += -D_USE_GSL  -lgslcblas
 else
-LDFLAGS   += -D_USE_GSL
+#LDFLAGS   += -D_USE_GSL
+endif
+
+
+# OPENMP
+ifdef USE_OPENMP
+LDFLAGS   += -fopenmp
 endif
 
 

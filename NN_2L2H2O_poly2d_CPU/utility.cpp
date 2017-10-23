@@ -17,7 +17,14 @@
 #include "utility.h"
 #include "atomTypeID.h"
 
-
+// Define the cblas library 
+#ifdef _USE_GSL
+#include <gsl/gsl_cblas.h>
+#elif _USE_MKL
+//#include <gsl/gsl_cblas.h>
+#else 
+//#include <gsl/gsl_cblas.h>
+#endif
 
 #define FLAGSTART '-'
 #define FLAGASSGN '='
@@ -25,215 +32,17 @@
 
 using namespace std;
 
-//==============================================================================
-//
-// Memory clear up
-// These definitions are put into header file
-/*
-template <typename T>
-void clearMemo(T** & data){
-     if (data != nullptr) {
-          if (data[0] != nullptr)  delete[] data[0];   
-          delete[] data;
-     };
-     data = nullptr;
-     return;
-}
-
-
-
-
-template <typename T>
-void clearMemo(std::vector<T**> & data){
-     for (auto it=data.rbegin(); it!=data.rend(); it++){
-          clearMemo<T>(*it);
-          data.pop_back();
-     }
-     return;
-}
-
-
-
-template <typename T>
-void clearMemo(std::map<std::string, T**> & data){
-     for (auto it=data.begin(); it!=data.end(); it++){
-          clearMemo<T>(it->second);
-          it->second = nullptr;
-     }
-     return;
-}
-*/
-
-
-
-//==============================================================================
-//
-// Initialize a matrix in consecutive memory
-/*
-template <typename T>
-bool init_mtx_in_mem(T** & data, size_t& rows, size_t& cols){
-     try{
-          if( rows*cols >0) {          
-               T * p = new T[rows*cols];
-               data = new T* [rows];
-               #ifdef _OPENMP
-               #pragma omp parallel for shared(data, p, rows, cols)
-               #endif 
-               for(int ii=0; ii<rows; ii++){                    
-                    data[ii]=p+ii*cols;     
-                    memset(data[ii], 0, sizeof(T)*cols);       
-               }          
-          }     
-          return true;
-     } catch (...){
-          clearMemo<T>(data);   
-          return false;
-     }
-}
-*/
-
-
-
-//==============================================================================
-//
-// Check if a string is a float number
-/*
-template <typename T>
-bool IsFloat( string& myString ) {
-    std::istringstream iss(myString);
-    T f;
-    iss >> skipws >> f; // skipws ignores leading whitespace
-    // Check the entire string was consumed and if either failbit or badbit is set
-    return iss.eof() && !iss.fail(); 
-}
-*/
-
-
-//==============================================================================
-//
-// Read in a 2D array from file and save to  **data / rows / cols
-/*
-template <typename T>
-int read2DArrayfile(T** & data, size_t& rows, size_t& cols, const char* file, int titleline){
-    try { 
-          
-          clearMemo<T>(data);
-          
-          ifstream ifs(file);
-          string line;
-          matrix_by_vector_t<T> mtx;
-          
-          for (int i=0; i < titleline; i++){          
-               getline(ifs,line);
-          }
-          vector<T> onelinedata;
-          while(getline(ifs, line)){          
-               char* p = &line[0u];
-               char* end;              
-               onelinedata.clear();                              
-               for( T d = strtod(p, &end); p != end; d = strtod(p, &end) ) {
-                    p = end;                    
-                    onelinedata.push_back(d);           
-               };               
-               if(onelinedata.size()>0) mtx.push_back(onelinedata);              
-          }          
-
-          rows=mtx.size();
-          cols=mtx[0].size();
-          
-          init_mtx_in_mem<T>(data, rows, cols);  
-          
-          #ifdef _OPENMP
-          #pragma omp parallel for simd shared(data, mtx, rows)
-          #endif                                      
-          for(int ii=0; ii<rows; ii++){
-               copy(mtx[ii].begin(), mtx[ii].end(), data[ii]);       
-          }          
-
-          mtx.clear();
-          return 0;                    
-    } catch (const std::exception& e) {
-        std::cerr << " ** Error ** : " << e.what() << std::endl;
-        return 1;
-    }
-}
-
-
-template <typename T>
-int read2DArray_with_max_thredhold(T** & data, size_t& rows, size_t& cols, const char* file, int titleline, int thredhold_col, T thredhold_max){
-    try { 
-          
-          clearMemo<T>(data);
-          
-          ifstream ifs(file);
-          string line;
-          matrix_by_vector_t<T> mtx;
-          
-          for (int i=0; i < titleline; i++){          
-               getline(ifs,line);
-          }
-          vector<T> onelinedata;
-          while(getline(ifs, line)){          
-               char* p = &line[0u];
-               char* end;              
-               onelinedata.clear();                              
-               for( T d = strtod(p, &end); p != end; d = strtod(p, &end) ) {
-                    p = end;                    
-                    onelinedata.push_back(d);           
-               };               
-               if (onelinedata.size()>0) {   
-                                                           
-                    if ( thredhold_col >=0) {           
-                         // when thredhold_index is non-negative, check the colum VS max
-                         if (onelinedata[thredhold_col] > thredhold_max) {
-                              continue;
-                         }
-                    } else {
-                         // when thredhold_index is negative, check the column from the end VS max
-                         if ( onelinedata[ onelinedata.size() + thredhold_col] > thredhold_max ) {
-                              continue;
-                         }                                             
-                    }
-                    mtx.push_back(onelinedata);                               
-               }                           
-          }          
-
-          rows=mtx.size();
-          cols=mtx[0].size();
-          
-          init_mtx_in_mem<T>(data, rows, cols);  
-          
-          #ifdef _OPENMP
-          #pragma omp parallel for simd shared(data, mtx, rows)
-          #endif                                      
-          for(int ii=0; ii<rows; ii++){
-               copy(mtx[ii].begin(), mtx[ii].end(), data[ii]);       
-          }          
-
-          mtx.clear();
-          return 0;                    
-    } catch (const std::exception& e) {
-        std::cerr << " ** Error ** : " << e.what() << std::endl;
-        return 1;
-    }
-}
-*/
-
 
 
 //==============================================================================
 //
 // Matrix transpose
-/*
-template <typename T>
-void transpose_mtx(T** & datrsc, T** & datdst, size_t& nrow_rsc, size_t& ncol_rsc)
-{
-     cout<< "Undefined action with this data type" << std::endl;
-};
-*/
+//template <typename T>
+//void transpose_mtx(T** & datrsc, T** & datdst, size_t& nrow_rsc, size_t& ncol_rsc)
 
 
 // Function definition for a specific type should be left in cpp file
+#if defined (_USE_GSL) || defined (_USE_MKL)
 template <>
 void transpose_mtx<double>(double** & datrsc, double** & datdst, size_t& nrow_rsc, size_t& ncol_rsc){
      try{ 
@@ -280,49 +89,81 @@ void transpose_mtx<float>(float** & datrsc, float** & datdst, size_t& nrow_rsc, 
         std::cerr << " ** Error ** : " << e.what() << std::endl;
      }
 };
+#endif
 
 
 
-//================================================================================
+
+
+
+
+
+
+//===============================================================================                                     
 //
-//template functions instanilization
-template <typename T>
-void _NEVER_USED_INSTANLIZATION_UTILITY(){
-     T** dptr;
-     size_t rows =1 , cols=1;     
-     init_mtx_in_mem<T>(dptr, rows, cols);
+// Matrix normalization utility functions
+size_t get_count_by_percent(size_t src_count, double percentage){
+     return (size_t) src_count*percentage;
+}                                     
 
-     vector<T**> vec;          
-     map<string, T**> mp;     
+// Following functions are defined if cblas library is employed.
+#if defined (_USE_GSL) || defined (_USE_MKL)
+
+template<>
+void get_max_each_row<double>(double*& rst, double*& src, size_t src_rows, size_t src_cols, long int col_start, long int col_end){
+     if(col_end < 0) col_end = src_cols + col_end ;  // change negative column index to positive
+     if(rst == nullptr) rst = new double[src_rows]();   
+      
+     #ifdef _OPENMP
+     #pragma omp parallel for simd shared(src, rst, src_rows, src_cols, col_start, col_end)
+     #endif   
+     for(size_t ii=0 ; ii< src_rows ; ii++ ){
+          size_t i = cblas_idamax( (const int)(col_end - col_start + 1), (const double*)(&src[src_cols*ii + col_start]) , 1 ) ;
+          rst[ii] = src[ii*src_cols + col_start + i];
+     };
+};
+
+
+template<>
+void get_max_each_row<float>(float*& rst, float*& src, size_t src_rows, size_t src_cols, long int col_start, long int col_end){
+     if(col_end < 0) col_end = src_cols + col_end ;  // change negative column index to positive
+     if(rst == nullptr) rst = new float[src_rows]();          
      
-     string mystring = "SOME";
-     
-     IsFloat<T>(mystring);
-     
-     read2DArrayfile<T>(dptr, rows, cols, "hello");
-     read2DArray_with_max_thredhold<T>(dptr, rows, cols, "Hello", 1, 1, 0);          
-     transpose_mtx<T>(dptr, dptr, rows, cols);     
-     clearMemo<T>(vec);     
-     clearMemo<T>(mp);    
-     clearMemo<T>(dptr);
-          
+     #ifdef _OPENMP
+     #pragma omp parallel for simd shared(src, rst, src_rows, src_cols, col_start, col_end)
+     #endif   
+     for(size_t ii=0 ; ii< src_rows ; ii++ ){
+          size_t i = cblas_isamax( (const int)(col_end - col_start + 1), (const float*)(&src[src_cols*ii + col_start]) , 1 ) ;
+          rst[ii] = src[ii*src_cols + col_start + i];
+     };
+};
+
+
+template<>
+void norm_rows_in_mtx_by_col_vector(double*& src_mtx, size_t src_rows, size_t src_cols, double*& scale_vec, long int col_start, long int col_end){
+     if(col_end < 0) col_end = src_cols + col_end ;  // change negative column index to positive
+     // scale each row (from col_start[0,1,2...] to col_end[ ...-3, -2,-1]) in a matrix by a column vector
+     #ifdef _OPENMP
+     #pragma omp parallel for simd shared(src_mtx, src_rows, src_cols, scale_vec, col_start, col_end)
+     #endif
+     for(int ii = 0; ii< src_rows; ii++){     
+          cblas_dscal( (const int)( col_end - col_start + 1 ), (double)(1/scale_vec[ii]), &(src_mtx[ii*src_cols+col_start]), 1);
+     }
 }
 
-
-/*
-template class _NEVER_USED_INSTANLIZATION_UTILITY<double> ;
-template class _NEVER_USED_INSTANLIZATION_UTILITY<float> ;
-template class _NEVER_USED_INSTANLIZATION_UTILITY<unsigned int> ;
-template class _NEVER_USED_INSTANLIZATION_UTILITY<int> ;
-*/
-
-void NEVER_USED_INSTANLIZATION_UTILITY(){
-     _NEVER_USED_INSTANLIZATION_UTILITY<double>();
-     _NEVER_USED_INSTANLIZATION_UTILITY<float>() ;
-     _NEVER_USED_INSTANLIZATION_UTILITY<idx_t>();
-     _NEVER_USED_INSTANLIZATION_UTILITY<int>();
-     _NEVER_USED_INSTANLIZATION_UTILITY<size_t>();
+template<>
+void norm_rows_in_mtx_by_col_vector(float*& src_mtx, size_t src_rows, size_t src_cols, float*& scale_vec, long int col_start, long int col_end){
+     if(col_end < 0) col_end = src_cols + col_end ;  // change negative column index to positive
+     // scale each row (from col_start[0,1,2...] to col_end[ ...-3, -2,-1]) in a matrix by a column vector
+     #ifdef _OPENMP
+     #pragma omp parallel for simd shared(src_mtx, src_rows, src_cols, scale_vec, col_start, col_end)
+     #endif
+     for(int ii = 0; ii< src_rows; ii++){     
+          cblas_sscal( (const int)(col_end - col_start +1), (float)(1/scale_vec[ii]), &(src_mtx[ii*src_cols+col_start]), 1);
+     }
 }
+
+#endif
 
 
 

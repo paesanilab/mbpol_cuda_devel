@@ -15,13 +15,12 @@ interested_labels="GAngular GRadial Gfn_ang_all Gfn_rad+ang_all Gf_run_all"  # i
 rm -f ${logfile} ${outfile}
 ## run bench with different threads
 
-compile_options=( ENABLE_XHOST  ENABLE_CAVX512  ENABLE_CRAVX512  ENABLE_CRAVX2  ENABLE_CRAVXI  ENABLE_AVX  NO_VECT)
-
-for COMPOPT in "${compile_options[@]}"
-do
+#compile_options=( ENABLE_XHOST  ENABLE_CAVX512  ENABLE_CRAVX512  ENABLE_CRAVX2  ENABLE_CRAVXI  ENABLE_AVX  NO_VECT)
+#for COMPOPT in "${compile_options[@]}"
+#do
 	#export ${COMPOPT}=1
-	echo " Compile with OPTION : "  $COMPOPT >> $outfile
-     ${COMPOPT}=1 make
+	#echo " Compile with OPTION : "  $COMPOPT >> $outfile
+     #${COMPOPT}=1 make
      
      rm -f ${logfile}
 
@@ -110,7 +109,9 @@ END{
      
      echo >> $outfile
 	#unset $COMPOPT
-done
+
+#compiler option - done
+#done
 
 
 cat ${outfile}

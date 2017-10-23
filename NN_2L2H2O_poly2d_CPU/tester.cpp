@@ -24,7 +24,7 @@
 #elif _USE_MKL
 //#include <gsl/gsl_cblas.h>
 #else
-#include <gsl/gsl_cblas.h>
+//#include <gsl/gsl_cblas.h>
 #endif
 
 #include <omp.h>
@@ -38,6 +38,10 @@ const char* FLAG_DISTFILE_HEADLINE = "distheadline" ;
 const char* FLAG_COLUMN_INDEX_FILE =   "columnfile" ;
 const char* FLAG_PARAM_FILE        =    "paramfile" ;
 const char* FLAG_ATOM_ORDER_FILE   =      "ordfile" ;
+
+
+const int THREDHOLD_COL = -1;
+const double THREDHOLD_MAX_VALUE = 60.0;
 
 // tester
 int main(int argc, char** argv){ 
@@ -53,7 +57,7 @@ int main(int argc, char** argv){
      } 
 
      Gfunction_t<double> gf;     // the G-function
-     /*
+     
      // distance file headline
      int distheadline = getCmdLineArgumentInt(argc, (const char **)argv, FLAG_DISTFILE_HEADLINE);     
      if(distheadline==0) distheadline=1;     // a special line for test case
@@ -74,7 +78,12 @@ int main(int argc, char** argv){
           
 
      // make_G(distfile, distheadline, column_idx file, param file, order file)
-     gf.make_G(argv[1], distheadline, colidxfile.c_str(), paramfile.c_str(), ordfile.c_str());
+     gf.make_G(argv[1], distheadline, colidxfile.c_str(), paramfile.c_str(), ordfile.c_str(), THREDHOLD_COL, (double)THREDHOLD_MAX_VALUE);
+     
+     
+     
+     // normalize G by the maximum value of first 90% dimers
+     //gf.norm_G_by_maxabs_in_first_percent(0.90);    
      // resutls saved in gf.G which is a map<string:atom_idx, double**>
      
      
@@ -82,8 +91,8 @@ int main(int argc, char** argv){
      // Show results on test data set
      if ( !strcmp(argv[1] , "test.dat") ) {
           cout << endl;
-          cout << "Output tester results for accuracy checking:" << endl;
-          std::cout.precision(std::numeric_limits<double>::digits10+1);  
+          cout << "Output tester results for accuracy checking:" << endl;          
+          cout.precision(std::numeric_limits<double>::digits10+1);            
           for(auto it= gf.G.begin(); it!=gf.G.end(); it++){
                string atom         = gf.model.atoms[it->first]->name;
                string atom_type    = gf.model.atoms[it->first]->type;
@@ -91,12 +100,12 @@ int main(int argc, char** argv){
                for(int ii=0; ii<3; ii++){
                     for(int jj=0; jj<gf.G_param_max_size[atom_type]; jj++){
                          if ((jj>0)&&( jj%3 ==0 ) ) cout << endl;
-                         cout << fixed << setw(16) << it->second[jj][ii] << " " ;                       
+                         cout << scientific << it->second[jj][ii] << " " ;                       
                     }
                cout << endl;
                }               
           }
      }
     
-*/     return 0;
+     return 0;
 }

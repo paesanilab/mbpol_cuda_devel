@@ -29,7 +29,7 @@
 #elif _USE_MKL
 //#include <gsl/gsl_cblas.h>
 #else
-#include <gsl/gsl_cblas.h>
+//#include <gsl/gsl_cblas.h>
 #endif
 
 //==============================================================================
@@ -101,9 +101,10 @@ void clearMemo(std::map<std::string, T**> & data){
 // Initialize a matrix in consecutive memory
 template <typename T>
 bool init_mtx_in_mem(T** & data, size_t& rows, size_t& cols){
-     try{
+     try{          
+          //clearMemo<T>(data);
           if( rows*cols >0) {          
-               T * p = new T[rows*cols];
+               T * p = new T[rows*cols]();
                data = new T* [rows];
                #ifdef _OPENMP
                #pragma omp parallel for shared(data, p, rows, cols)
@@ -241,64 +242,111 @@ int read2DArray_with_max_thredhold(T** & data, size_t& rows, size_t& cols, const
 template <typename T>
 void transpose_mtx(T** & datrsc, T** & datdst, size_t& nrow_rsc, size_t& ncol_rsc)
 {
-     std::cout<< "Undefined action with this data type" << std::endl;
-};
-
-
-template <>
-void transpose_mtx<double>(double** & datrsc, double** & datdst, size_t& nrow_rsc, size_t& ncol_rsc);
-/*
-{
      try{ 
      
-          if ( datdst== nullptr) init_mtx_in_mem<double>(datdst, ncol_rsc, nrow_rsc);
-     
-         
-          // Switch row-col to col-row         
-          //for(int ii=0; ii<nrow_rsc; ii++){
-          //     for(int jj=0; jj<ncol_rsc; jj++){
-          //          datdst[jj][ii] = datrsc[ii][jj];
-          //     }
-          //}
+          if ( datdst== nullptr) init_mtx_in_mem<T>(datdst, ncol_rsc, nrow_rsc);
           
           // best way to transpose a c++ matrix is copying by row    
           #ifdef _OPENMP
           #pragma omp parallel for simd shared(datrsc, datdst, nrow_rsc, ncol_rsc)
           #endif      
           for(int irow = 0; irow< nrow_rsc; irow++){          
-               cblas_dcopy( (const int) ncol_rsc, (const double*) &datrsc[irow][0], 1, &datdst[0][irow], (const int) nrow_rsc);          
-          }
-          
-          // Test copying by col
-          //
-          //for(int icol = 0; icol< ncol_rsc; icol++){          
-          //     cblas_dcopy(nrow_rsc, &datrsc[0][icol], ncol_rsc, &datdst[icol][0], 1);          
-          //}
+               for(int icol=0; icol < ncol_rsc; icol++){
+                    datdst[icol][irow] = datrsc[irow][icol];      // not a smart way.
+               }
+          }          
           
      } catch (const std::exception& e) {
         std::cerr << " ** Error ** : " << e.what() << std::endl;
      }
 };
-*/
+
+
+
+
+#if defined (_USE_GSL) || defined (_USE_MKL)
+// Using cblas_dcopy and cblas_scopy if cblas libraries are employed
+template <>
+void transpose_mtx<double>(double** & datrsc, double** & datdst, size_t& nrow_rsc, size_t& ncol_rsc);
 
 template <>
 void transpose_mtx<float>(float** & datrsc, float** & datdst, size_t& nrow_rsc, size_t& ncol_rsc);
-/*{
-     try{ 
-     
-          if ( datdst== nullptr) init_mtx_in_mem<float>(datdst, ncol_rsc, nrow_rsc);
 
+#endif
+
+
+
+//===============================================================================                                     
+//
+// Matrix normalization utility functions
+size_t get_count_by_percent(size_t src_count, double percentage);
+                                     
+                                     
+template<typename T>
+void get_max_each_row(T*& rst, T*& src, size_t src_rows, size_t src_cols, long int col_start=0, long int col_end=-1){ 
+          if(col_end < 0) col_end = src_cols + col_end ;  // change negative column index to positive        
+          if(rst == nullptr) rst = new T[src_rows]();               
           #ifdef _OPENMP
-          #pragma omp parallel for simd shared(datrsc, datdst, nrow_rsc, ncol_rsc)
-          #endif      
-          for(int irow = 0; irow< nrow_rsc; irow++){          
-               cblas_scopy( (const int) ncol_rsc, (const float*) &datrsc[irow][0], 1, &datdst[0][irow], (const int) nrow_rsc);          
-          }                  
-     } catch (const std::exception& e) {
-        std::cerr << " ** Error ** : " << e.what() << std::endl;
-     }
+          #pragma omp parallel for simd shared(src, rst, src_rows, src_cols, col_start, col_end)
+          #endif   
+          for(size_t ii=0 ; ii< src_rows ; ii++ ){
+               for(size_t jj=col_start; jj<= col_end ; jj++){
+                    if ( rst[ii] < abs(src[ii*src_cols + jj]) ) {
+                         rst[ii] = abs(src[ii*src_cols + jj]);
+                    };
+               }
+          };     
 };
-*/
+
+
+#if defined (_USE_GSL) || defined (_USE_MKL)
+
+template<>
+void get_max_each_row<double>(double*& rst, double*& src, size_t src_rows, size_t src_cols, long int col_start, long int col_end);
+
+template<>
+void get_max_each_row<float>(float*& rst, float*& src, size_t src_rows, size_t src_cols, long int col_start, long int col_end);
+#endif
+
+
+template<typename T>
+void norm_rows_in_mtx_by_col_vector(T*& src_mtx, size_t src_rows, size_t src_cols, T*& scale_vec, long int col_start=0, long int col_end=-1 ){
+     if(col_end < 0) col_end = src_cols + col_end ;  // change negative column index to positive
+     // scale each row (from offset index) in a matrix by a column vector
+     #ifdef _OPENMP
+     #pragma omp parallel for simd shared(src_mtx, src_rows, src_cols, scale_vec, col_start, col_end)
+     #endif
+     for(int i = 0; i< src_rows; i++){     
+          T scale = 1 / scale_vec[i];
+          for(int j=col_start; j<= col_end; j++){
+               src_mtx[src_cols*i + j] = src_mtx[src_cols*i + j] * scale ;
+          }
+     }
+}
+
+
+#if defined (_USE_GSL) || defined (_USE_MKL)
+template<>
+void norm_rows_in_mtx_by_col_vector<double>(double*& src_mtx, size_t src_rows, size_t src_cols, double*& scale_vec, long int col_start, long int col_end);
+
+template<>
+void norm_rows_in_mtx_by_col_vector<float>(float*& src_mtx, size_t src_rows, size_t src_cols, float*& scale_vec, long int col_start, long int col_end);
+#endif
+
+
+template<typename T>
+void norm_rows_by_maxabs_in_each_row(T*& src_mtx, size_t src_rows, size_t src_cols, long int max_start_col=0, long int max_end_col=-1, long int norm_start_col =0, long int norm_end_col=-1){     
+     
+     T* norms = new T[src_rows]();     
+     get_max_each_row<T>(norms, src_mtx, src_rows, src_cols, max_start_col, max_end_col);   
+     norm_rows_in_mtx_by_col_vector<T>(src_mtx, src_rows, src_cols, norms, norm_start_col, norm_end_col);          
+     delete[] norms;
+}
+
+
+
+
+
 
 //==============================================================================
 //
@@ -312,5 +360,6 @@ int getCmdLineArgumentInt(const int argc, const char **argv, const char *string_
 
 bool getCmdLineArgumentString(const int argc, const char **argv,
                                      const char *string_ref, std::string & string_retval);
+                                                                        
 
 #endif
