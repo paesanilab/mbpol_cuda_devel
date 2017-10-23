@@ -22,11 +22,14 @@ These codes model the complete workflow of performing prediction based on Neural
 - `run_bench.x`                    : Benchmarking script
    
 ### For class file `Gfunction.h/cpp` constructing G-function:
-This file use `CBLAS` library and may use `openmp` to speed up performance:  
+These files contain following members:  
    - It has a member `model` containing atom name, type, and id information for easily accessing atom information
    - It has a member `GP` containing the correlation parameters used for generating the G-function
    - It may employ the `openmp - pragma omp parallel for simd` to speed up the performance
    - Final results are saved in class member `G` 
+
+In addition, it is possible to utilize `CBLAS` library and/or `fopenmp` to speed up performance
+   
 
 ### For the provided tester:  
 This tester shows the way to construct G-function.
@@ -35,17 +38,32 @@ This tester shows the way to construct G-function.
 
 ## To Compile:
 To compile the tester EXE:
-   - Check the installation path for `cblas` library. Change the included library path and invoked library name. 
-   - Run `[OPTIMIZEOPTION=1] make` to create the executable file `gfunction_generate.x`
-      - the OPTIMIZE OPTION may be one of the following:
-          - ENABLE_XHOST
-          - ENABLE_CAVX512  
-          - ENABLE_CRAVX512  
-          - ENABLE_CRAVX2  
-          - ENABLE_CRAVXI  
-          - ENABLE_AVX  
-          - NO_VECT
-          - (None, by default)
+   - [optional] Check the installation path for `cblas` library. Change the included library path and invoked library name. 
+   - Run `[FLAGS1=1|FLAGS2=1|...] make` to create the executable file `gfunction_generate.x`
+      - FLAGS may be ONE from EACH following groups:
+        - Compiler type option, may be one of:
+          - CMP_GNU [default];
+          - CMP_INTEL;
+        - CBLAS library utilization, may be one of:
+          - USE_MKL;[Not finished yet];
+          - USE_GSL;
+          - (None, by default);
+        - OpenMP support, may be one of:
+          - USE_OPENMP;
+          - (None, by default);
+        - the OPTIMIZE OPTION (compatible with Intel compiler) may be one of the following:
+            - ENABLE_XHOST
+            - ENABLE_CAVX512  
+            - ENABLE_CRAVX512  
+            - ENABLE_CRAVX2  
+            - ENABLE_CRAVXI  
+            - ENABLE_AVX  
+            - NO_VECT
+            - (None, by default)
+   - Example:
+      - `make` creates exe file based on GNU compiler, no clabs and openmp support
+      - `USE_GSL=1 USE_OPENMP=1 make` creates exe file with gsl_cblas and openmp support
+      - `CMP_INTEL=1 USE_GSL=1 USE_OPENMP=1 ENABLE_XHOST=1 make` creates exe file with best optimized performance on Intel and gsl_cblas/openmp support
    - Run `make clean` to clean old object and executable files.
 
 ## To RUN
