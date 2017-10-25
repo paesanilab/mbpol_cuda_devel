@@ -45,7 +45,7 @@ To compile the tester EXE:
           - CMP_GNU [default];
           - CMP_INTEL;
         - CBLAS library utilization, may be one of:
-          - USE_MKL;[Not finished yet];
+          - USE_MKL;[Works with Intel2017];
           - USE_GSL;
           - (None, by default);
         - OpenMP support, may be one of:
@@ -63,7 +63,7 @@ To compile the tester EXE:
    - Example:
       - `make` creates exe file based on GNU compiler, no clabs and openmp support
       - `USE_GSL=1 USE_OPENMP=1 make` creates exe file with gsl_cblas and openmp support
-      - `CMP_INTEL=1 USE_GSL=1 USE_OPENMP=1 ENABLE_XHOST=1 make` creates exe file with best optimized performance on Intel and gsl_cblas/openmp support
+      - `CMP_INTEL=1 USE_MKL=1 USE_OPENMP=1 ENABLE_XHOST=1 make` creates exe file with best optimized performance on Intel and mkl_cblas/openmp support
    - Run `make clean` to clean old object and executable files.
 
 ## To RUN
