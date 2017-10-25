@@ -20,17 +20,22 @@
 #include <map>
 #include <string>
 
-#include "utility.h"
 #include "atomTypeID.h"
 
 // Define the cblas library 
 #ifdef _USE_GSL
 #include <gsl/gsl_cblas.h>
 #elif _USE_MKL
-//#include <gsl/gsl_cblas.h>
+#include <mkl_cblas.h>
 #else
 //#include <gsl/gsl_cblas.h>
 #endif
+
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif 
+
 
 //==============================================================================
 // A 2D-array type based on vector

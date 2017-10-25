@@ -42,34 +42,69 @@ CCFLAGS   += -O3
 endif
 
 
+# include paths
+INCLUDES  := 
+
+
 # Libraries
+LIBRARIES := 
 LDFLAGS   :=  
+
+
+#LINKER
+LINKOPT   :=
 
 # GSL / MKL library
 ifdef USE_MKL
-LDFLAGS   += -D_USE_MKL
-else ifdef USE_GSL 
-LDFLAGS   += -D_USE_GSL  -lgslcblas
-else
-#LDFLAGS   += -D_USE_GSL
-endif
+     LDFLAGS   += -D_USE_MKL  # switch on flag for compiling
 
+     MKLROOT   ?= ${INTELDIR}/mkl
+     MKLLIB    ?= ${MKLROOT}/lib/intel64
+     INCLUDES  += -I${MKLROOT}/include
+     LIBRARIES += -L${MKLLIB}
 
-# OPENMP
-ifdef USE_OPENMP
-LDFLAGS   += -fopenmp
+     LDFLAGS   += -DMKL_ILP64
+     LINKOPT   += -Wl,--no-as-needed   -lmkl_intel_lp64
+     #LINKOPT   += -Wl,--start-group ${MKLLIB}/libmkl_intel_ilp64.a
+
+     ifeq (${HOST_COMPILER}, icpc)
+          ifdef USE_OPENMP
+               LDFLAGS   +=  -qopenmp
+               #LINKOPT   +=  ${MKLLIB}/libmkl_intel_thread.a ${MKLLIB}/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl -mkl
+               LINKOPT   +=   -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm -ldl
+          else
+               #LINKOPT   +=  ${MKLLIB}/libmkl_sequential.a ${MKLLIB}/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl -mkl
+               LINKOPT   +=  -lmkl_sequential    -lmkl_core         -lpthread -lm -ldl
+          endif
+     else     
+          LDFLAGS   += -m64
+          ifdef USE_OPENMP
+               #LINKOPT   +=  ${MKLLIB}/libmkl_gnu_thread.a ${MKLLIB}/libmkl_core.a -Wl,--end-group  -lgomp -lpthread -lm -ldl 
+               LINKOPT   +=  -lmkl_gnu_thread -lmkl_core -lgomp -lpthread -lm -ldl 
+          else
+               #LINKOPT   +=  ${MKLLIB}/libmkl_sequential.a ${MKLLIB}/libmkl_core.a -Wl,--end-group  -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl 
+               LINKOPT   +=  -lmkl_sequential -lmkl_core            -lpthread -lm -ldl
+          endif
+     endif
+
+else 
+
+     # USE_GSL
+     ifdef USE_GSL 
+     LDFLAGS   += -D_USE_GSL  -lgslcblas
+     endif
+
+     # OPENMP
+     ifdef USE_OPENMP
+     LDFLAGS   += -fopenmp
+     endif
+
 endif
 
 
 # NVCC flags
 NVCCFLAGS := -Wno-deprecated-gpu-targets
 
-
-# include paths
-#INCLUDES  := -I$(CBLAS_PATH)/include
-#LIBRARIES := -L$(LD_LIBRARY_PATH)
-#LIBRARIES := -L$(CBLAS_PATH)/lib64
-#LIBRARIES  := -L/usr/lib64
 
 #=====================================================================
 #
@@ -81,11 +116,11 @@ build: gfunction_generate.x
 DEP= tester.o Gfunction.o utility.o atomTypeID.o readGparams.o timestamps.o
 
 gfunction_generate.x: $(DEP)
-	$(HOST_COMPILER) $(CCFLAGS) $(LDFLAGS) $(INCLUDES) $(LIBRARIES) -o $@ $+
+	$(HOST_COMPILER) $(INCLUDES) $(LIBRARIES) $(LINKOPT) $(CCFLAGS) $(LDFLAGS)  -o $@ $+
 
 	
 %.o: %.cpp 
-	$(HOST_COMPILER) $(CCFLAGS) $(LDFLAGS) $(INCLUDES) $(LIBRARIES) -o $@ -c $<
+	$(HOST_COMPILER) $(INCLUDES) $(LIBRARIES) $(CCFLAGS) $(LDFLAGS)  -o $@ -c $<
 		
 	
 clean:

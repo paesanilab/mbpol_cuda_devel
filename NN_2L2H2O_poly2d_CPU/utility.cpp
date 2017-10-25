@@ -21,10 +21,16 @@
 #ifdef _USE_GSL
 #include <gsl/gsl_cblas.h>
 #elif _USE_MKL
-//#include <gsl/gsl_cblas.h>
+#include <mkl_cblas.h>
 #else 
 //#include <gsl/gsl_cblas.h>
 #endif
+
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif 
+
 
 #define FLAGSTART '-'
 #define FLAGASSGN '='

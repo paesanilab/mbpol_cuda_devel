@@ -89,7 +89,7 @@ int main(int argc, char** argv){
      
      
      // Show results on test data set
-     if ( !strcmp(argv[1] , "test.dat") ) {
+     if ( !strcmp(argv[1] , "tester.in") ) {
           cout << endl;
           cout << "Output tester results for accuracy checking:" << endl;          
           cout.precision(std::numeric_limits<double>::digits10+1);            
