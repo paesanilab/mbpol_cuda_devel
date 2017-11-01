@@ -49,7 +49,7 @@ using matrix_by_vector_t = std::vector<std::vector<T> >;
 //
 // Check if a string is a float number
 template <typename T>
-bool IsFloat( std::string& myString ) {
+bool IsFloat( std::string myString ) {
     std::istringstream iss(myString);
     T f;
     iss >> std::skipws >> f; // skipws ignores leading whitespace
@@ -105,7 +105,7 @@ void clearMemo(std::map<std::string, T**> & data){
 //
 // Initialize a matrix in consecutive memory
 template <typename T>
-bool init_mtx_in_mem(T** & data, size_t& rows, size_t& cols){
+bool init_mtx_in_mem(T** & data, size_t rows, size_t cols){
      try{          
           //clearMemo<T>(data);
           if( rows*cols >0) {          
@@ -245,7 +245,7 @@ int read2DArray_with_max_thredhold(T** & data, size_t& rows, size_t& cols, const
 // 2D array transpose
 //
 template <typename T>
-void transpose_mtx(T** & datrsc, T** & datdst, size_t& nrow_rsc, size_t& ncol_rsc)
+void transpose_mtx(T** & datdst,  T** datrsc,  size_t nrow_rsc, size_t ncol_rsc)
 {
      try{ 
      
@@ -272,10 +272,10 @@ void transpose_mtx(T** & datrsc, T** & datdst, size_t& nrow_rsc, size_t& ncol_rs
 #if defined (_USE_GSL) || defined (_USE_MKL)
 // Using cblas_dcopy and cblas_scopy if cblas libraries are employed
 template <>
-void transpose_mtx<double>(double** & datrsc, double** & datdst, size_t& nrow_rsc, size_t& ncol_rsc);
+void transpose_mtx<double>(double** & datdst, double** datrsc,  size_t nrow_rsc, size_t ncol_rsc);
 
 template <>
-void transpose_mtx<float>(float** & datrsc, float** & datdst, size_t& nrow_rsc, size_t& ncol_rsc);
+void transpose_mtx<float>(float** & datdst,  float** datrsc, size_t nrow_rsc, size_t ncol_rsc);
 
 #endif
 
@@ -288,7 +288,7 @@ size_t get_count_by_percent(size_t src_count, double percentage);
                                      
                                      
 template<typename T>
-void get_max_each_row(T*& rst, T*& src, size_t src_rows, size_t src_cols, long int col_start=0, long int col_end=-1){ 
+void get_max_each_row(T*& rst,  T* src,  size_t src_rows, size_t src_cols, long int col_start=0, long int col_end=-1){ 
           if(col_end < 0) col_end = src_cols + col_end ;  // change negative column index to positive        
           if(rst == nullptr) rst = new T[src_rows]();               
           #ifdef _OPENMP
@@ -307,15 +307,15 @@ void get_max_each_row(T*& rst, T*& src, size_t src_rows, size_t src_cols, long i
 #if defined (_USE_GSL) || defined (_USE_MKL)
 
 template<>
-void get_max_each_row<double>(double*& rst, double*& src, size_t src_rows, size_t src_cols, long int col_start, long int col_end);
+void get_max_each_row<double>(double*& rst, double* src, size_t src_rows, size_t src_cols, long int col_start, long int col_end);
 
 template<>
-void get_max_each_row<float>(float*& rst, float*& src, size_t src_rows, size_t src_cols, long int col_start, long int col_end);
+void get_max_each_row<float>(float*& rst, float* src, size_t src_rows, size_t src_cols, long int col_start, long int col_end);
 #endif
 
 
 template<typename T>
-void norm_rows_in_mtx_by_col_vector(T*& src_mtx, size_t src_rows, size_t src_cols, T*& scale_vec, long int col_start=0, long int col_end=-1 ){
+void norm_rows_in_mtx_by_col_vector(T* src_mtx, size_t src_rows, size_t src_cols, T* scale_vec, long int col_start=0, long int col_end=-1 ){
      if(col_end < 0) col_end = src_cols + col_end ;  // change negative column index to positive
      // scale each row (from offset index) in a matrix by a column vector
      #ifdef _OPENMP
@@ -332,15 +332,15 @@ void norm_rows_in_mtx_by_col_vector(T*& src_mtx, size_t src_rows, size_t src_col
 
 #if defined (_USE_GSL) || defined (_USE_MKL)
 template<>
-void norm_rows_in_mtx_by_col_vector<double>(double*& src_mtx, size_t src_rows, size_t src_cols, double*& scale_vec, long int col_start, long int col_end);
+void norm_rows_in_mtx_by_col_vector<double>(double* src_mtx, size_t src_rows, size_t src_cols, double* scale_vec, long int col_start, long int col_end);
 
 template<>
-void norm_rows_in_mtx_by_col_vector<float>(float*& src_mtx, size_t src_rows, size_t src_cols, float*& scale_vec, long int col_start, long int col_end);
+void norm_rows_in_mtx_by_col_vector<float>(float* src_mtx, size_t src_rows, size_t src_cols, float* scale_vec, long int col_start, long int col_end);
 #endif
 
 
 template<typename T>
-void norm_rows_by_maxabs_in_each_row(T*& src_mtx, size_t src_rows, size_t src_cols, long int max_start_col=0, long int max_end_col=-1, long int norm_start_col =0, long int norm_end_col=-1){     
+void norm_rows_by_maxabs_in_each_row(T* src_mtx, size_t src_rows, size_t src_cols, long int max_start_col=0, long int max_end_col=-1, long int norm_start_col =0, long int norm_end_col=-1){     
      
      T* norms = new T[src_rows]();     
      get_max_each_row<T>(norms, src_mtx, src_rows, src_cols, max_start_col, max_end_col);   

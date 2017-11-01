@@ -106,7 +106,7 @@ T get_Gangular(T Rij, T Rik, T Rjk, T eta, T zeta, T lambd){
 //void get_Gangular_add(T* & Rdst, T*& tmp, T* & Rij, T* & Rik, T* & Rjk, size_t n, T eta,T zeta, T lambd );
 
 
-void cutoff(T* & rst, T* & Rij, size_t n, T R_cut=10) {    
+void cutoff(T* rst, T* Rij, size_t n, T R_cut=10) {    
 #ifdef _OPENMP
 #pragma omp parallel for simd shared(rst, Rij, R_cut, n)
 #endif    
@@ -117,7 +117,7 @@ void cutoff(T* & rst, T* & Rij, size_t n, T R_cut=10) {
 
 
 
-void get_cos(T * & rst, T * & Rij, T * & Rik, T * & Rjk, size_t n) {
+void get_cos(T * rst, T * Rij, T * Rik, T * Rjk, size_t n) {
 #ifdef _OPENMP
 #pragma omp parallel for simd shared(rst, Rij, Rik, Rjk)
 #endif
@@ -128,8 +128,8 @@ void get_cos(T * & rst, T * & Rij, T * & Rik, T * & Rjk, size_t n) {
 
 
 
-void get_Gradial(T* & rst, T* & Rij, size_t n, T Rs, T eta ){ 
-  cutoff(rst, Rij, n);
+void get_Gradial(T* rst, T* Rij, size_t n, T Rs, T eta, T R_cut=10 ){ 
+  cutoff(rst, Rij, n, R_cut);
 #ifdef _OPENMP
 #pragma omp parallel for simd shared(rst, Rij, Rs, eta)
 #endif  
@@ -143,32 +143,26 @@ void get_Gradial(T* & rst, T* & Rij, size_t n, T Rs, T eta ){
 
 
 
-void get_Gradial_add(T* & rst, T* & Rij, size_t n, T Rs, T eta , T* tmp = nullptr ){
+void get_Gradial_add(T* rst, T* Rij, size_t n, T Rs, T eta , T* tmp = nullptr ){
+     bool iftmp = false;
      if (tmp == nullptr){
           tmp = new T[n]();
-          get_Gradial(tmp, Rij, n, Rs, eta);
-          #ifdef _OPENMP
-          #pragma omp parallel for simd shared(rst, tmp, n)
-          #endif            
-          for (int ii=0; ii<n; ii++){
-               rst[ii] += tmp[ii] ;
-          }  
-          delete[] tmp;          
-     } else {
-          get_Gradial(tmp, Rij, n, Rs, eta);
-          #ifdef _OPENMP
-          #pragma omp parallel for simd shared(rst, tmp, n)
-          #endif            
-          for (int ii=0; ii<n; ii++){
-               rst[ii] += tmp[ii] ;
-          }  
-     }
+          iftmp = true;             
+     }          
+     get_Gradial(tmp, Rij, n, Rs, eta);
+     #ifdef _OPENMP
+     #pragma omp parallel for simd shared(rst, tmp, n)
+     #endif            
+     for (int ii=0; ii<n; ii++){
+          rst[ii] += tmp[ii] ;
+     }  
+     if (iftmp) delete[] tmp;          
 };
  
 
 
 
-void get_Gangular(T* & rst, T* & Rij, T* & Rik, T*&  Rjk, size_t n, T eta, T zeta, T lambd ){
+void get_Gangular(T* rst, T* Rij, T* Rik, T* Rjk, size_t n, T eta, T zeta, T lambd ){
 #ifdef _OPENMP
 #pragma omp parallel for simd shared(rst, Rij, Rik, Rjk, eta, zeta, lambd)
 #endif
@@ -178,26 +172,20 @@ void get_Gangular(T* & rst, T* & Rij, T* & Rik, T*&  Rjk, size_t n, T eta, T zet
 };
 
 
-void get_Gangular_add(T* & rst, T* & Rij, T* & Rik, T*&  Rjk, size_t n, T eta, T zeta, T lambd, T* tmp = nullptr ){
+void get_Gangular_add(T* rst, T* Rij, T* Rik, T* Rjk, size_t n, T eta, T zeta, T lambd, T* tmp = nullptr ){
+     bool iftmp = false;
      if (tmp == nullptr){
-          tmp = new T[n]();     
-          get_Gangular(tmp, Rij, Rik, Rjk, n, eta, zeta, lambd);
-          #ifdef _OPENMP
-          #pragma omp parallel for simd shared(rst, tmp, n)
-          #endif            
-          for (int ii=0; ii<n; ii++){
-               rst[ii] += tmp[ii] ;
-          }  
-          delete[] tmp;
-     } else {
-          get_Gangular(tmp, Rij, Rik, Rjk, n, eta, zeta, lambd);
-          #ifdef _OPENMP
-          #pragma omp parallel for simd shared(rst, tmp, n)
-          #endif            
-          for (int ii=0; ii<n; ii++){
-               rst[ii] += tmp[ii] ;
-          }      
-     }
+          tmp = new T[n]();
+          iftmp = true;             
+     }     
+     get_Gangular(tmp, Rij, Rik, Rjk, n, eta, zeta, lambd);
+     #ifdef _OPENMP
+     #pragma omp parallel for simd shared(rst, tmp, n)
+     #endif            
+     for (int ii=0; ii<n; ii++){
+          rst[ii] += tmp[ii] ;
+     }  
+     if (iftmp) delete[] tmp;
 };
 
 
@@ -293,7 +281,7 @@ void load_distfile(const char* _distfile, int _titleline=0, int _thredhold_col=0
      } else {     
           int ifread = read2DArrayfile(dist, ndimers, ndistcols, _distfile, _titleline);
      }
-     transpose_mtx<T>(dist, distT, ndimers, ndistcols);     
+     transpose_mtx<T>(distT, dist, ndimers, ndistcols);     
      timers.timer_end(id);
      
     //std::cout << " READ in count of dimers = " << ndimers << std::endl;
@@ -372,7 +360,7 @@ void load_seq(const char* _seqfile){
 void make_G(){      
      timers.insert_random_timer(id3, 1 , "Gf_run_all");
      timers.timer_start(id3);     
-               
+             
      for(auto it = GP.seq.begin(); it!=GP.seq.end(); it++) {
           // it->first  = name of atom type ;
           // it->second = vector<idx_t> ;   a vector saving the list of sequence order
@@ -387,7 +375,7 @@ void make_G(){
           }          
           G_param_max_size[it->first] = curr_idx;                // max capacity of this atom type
      }
-     
+          
      // For each atom1
      //#pragma omp parallel for shared(model, GP, natom, colidx, distT, ndimers, G, G_param_start_idx, G_param_max_size)
      for (auto at1=model.atoms.begin(); at1!=model.atoms.end(); at1++ ) {
@@ -501,11 +489,15 @@ void make_G(){
 
 
 void make_G(const char* _distfile, int _titleline, const char* _colidxfile, const char* _paramfile, const char* _ordfile, int _thredhold_col=0, T thredhold_max=std::numeric_limits<T>::min()){     
-     
+
      load_distfile(_distfile, _titleline, _thredhold_col, thredhold_max);     
+
      load_dist_colidx(_colidxfile);
+
      load_paramfile(_paramfile);
+
      load_seq(_ordfile);         
+
      make_G();
 }
 
@@ -538,16 +530,16 @@ void norm_G_by_maxabs_in_first_percent(double percent){
 #if defined (_USE_GSL) || defined (_USE_MKL)
 
 template <>
-void Gfunction_t<double>::get_Gradial_add(double* & rst, double* & Rij, size_t n, double Rs, double eta, double* tmp );
+void Gfunction_t<double>::get_Gradial_add(double* rst, double* Rij, size_t n, double Rs, double eta, double* tmp );
 
 template <>
-void Gfunction_t<float>::get_Gradial_add(float* & rst, float* & Rij, size_t n, float Rs, float eta , float* tmp );
+void Gfunction_t<float>::get_Gradial_add(float* rst, float* Rij, size_t n, float Rs, float eta , float* tmp );
 
 template <>
-void Gfunction_t<double>::get_Gangular_add(double* & rst, double* & Rij, double* & Rik, double*&  Rjk, size_t n, double eta, double zeta, double lambd , double* tmp);
+void Gfunction_t<double>::get_Gangular_add(double* rst, double* Rij, double* Rik, double* Rjk, size_t n, double eta, double zeta, double lambd , double* tmp);
 
 template <>
-void Gfunction_t<float>::get_Gangular_add(float* & rst, float* & Rij, float* & Rik, float*&  Rjk, size_t n, float eta, float zeta, float lambd , float* tmp );
+void Gfunction_t<float>::get_Gangular_add(float* rst, float* Rij, float* Rik, float* Rjk, size_t n, float eta, float zeta, float lambd , float* tmp );
 
 #endif
 

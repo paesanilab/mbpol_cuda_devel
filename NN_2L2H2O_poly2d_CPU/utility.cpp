@@ -50,7 +50,7 @@ using namespace std;
 // Function definition for a specific type should be left in cpp file
 #if defined (_USE_GSL) || defined (_USE_MKL)
 template <>
-void transpose_mtx<double>(double** & datrsc, double** & datdst, size_t& nrow_rsc, size_t& ncol_rsc){
+void transpose_mtx<double>(double** & datdst,  double**  datrsc,  size_t nrow_rsc, size_t ncol_rsc){
      try{ 
      
           if ( datdst== nullptr) init_mtx_in_mem<double>(datdst, ncol_rsc, nrow_rsc);         
@@ -80,7 +80,7 @@ void transpose_mtx<double>(double** & datrsc, double** & datdst, size_t& nrow_rs
 };
 
 template <>
-void transpose_mtx<float>(float** & datrsc, float** & datdst, size_t& nrow_rsc, size_t& ncol_rsc){
+void transpose_mtx<float>(float** & datdst, float** datrsc,  size_t nrow_rsc, size_t ncol_rsc){
      try{ 
      
           if ( datdst== nullptr) init_mtx_in_mem<float>(datdst, ncol_rsc, nrow_rsc);
@@ -116,7 +116,7 @@ size_t get_count_by_percent(size_t src_count, double percentage){
 #if defined (_USE_GSL) || defined (_USE_MKL)
 
 template<>
-void get_max_each_row<double>(double*& rst, double*& src, size_t src_rows, size_t src_cols, long int col_start, long int col_end){
+void get_max_each_row<double>(double*& rst, double* src, size_t src_rows, size_t src_cols, long int col_start, long int col_end){
      if(col_end < 0) col_end = src_cols + col_end ;  // change negative column index to positive
      if(rst == nullptr) rst = new double[src_rows]();   
       
@@ -131,7 +131,7 @@ void get_max_each_row<double>(double*& rst, double*& src, size_t src_rows, size_
 
 
 template<>
-void get_max_each_row<float>(float*& rst, float*& src, size_t src_rows, size_t src_cols, long int col_start, long int col_end){
+void get_max_each_row<float>(float*& rst, float* src, size_t src_rows, size_t src_cols, long int col_start, long int col_end){
      if(col_end < 0) col_end = src_cols + col_end ;  // change negative column index to positive
      if(rst == nullptr) rst = new float[src_rows]();          
      
@@ -146,7 +146,7 @@ void get_max_each_row<float>(float*& rst, float*& src, size_t src_rows, size_t s
 
 
 template<>
-void norm_rows_in_mtx_by_col_vector(double*& src_mtx, size_t src_rows, size_t src_cols, double*& scale_vec, long int col_start, long int col_end){
+void norm_rows_in_mtx_by_col_vector(double* src_mtx, size_t src_rows, size_t src_cols, double* scale_vec, long int col_start, long int col_end){
      if(col_end < 0) col_end = src_cols + col_end ;  // change negative column index to positive
      // scale each row (from col_start[0,1,2...] to col_end[ ...-3, -2,-1]) in a matrix by a column vector
      #ifdef _OPENMP
@@ -158,7 +158,7 @@ void norm_rows_in_mtx_by_col_vector(double*& src_mtx, size_t src_rows, size_t sr
 }
 
 template<>
-void norm_rows_in_mtx_by_col_vector(float*& src_mtx, size_t src_rows, size_t src_cols, float*& scale_vec, long int col_start, long int col_end){
+void norm_rows_in_mtx_by_col_vector(float* src_mtx, size_t src_rows, size_t src_cols, float* scale_vec, long int col_start, long int col_end){
      if(col_end < 0) col_end = src_cols + col_end ;  // change negative column index to positive
      // scale each row (from col_start[0,1,2...] to col_end[ ...-3, -2,-1]) in a matrix by a column vector
      #ifdef _OPENMP

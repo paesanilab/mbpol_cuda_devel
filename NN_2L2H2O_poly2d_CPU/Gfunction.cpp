@@ -43,29 +43,53 @@ using namespace std;
 #if defined (_USE_GSL) || defined (_USE_MKL)
 
 template <>
-void Gfunction_t<double>::get_Gradial_add(double* & rst, double* & Rij, size_t n, double Rs, double eta, double* tmp ){  
+void Gfunction_t<double>::get_Gradial_add(double* rst, double* Rij, size_t n, double Rs, double eta, double* tmp ){  
+     bool iftmp = false;
+     if (tmp == nullptr){
+          tmp = new double[n]();
+          iftmp = true;             
+     }     
      get_Gradial(tmp, Rij, n, Rs, eta);
      cblas_daxpy((const int)n, 1.0, (const double*)tmp, 1, rst, 1);     
+     if (iftmp) delete[] tmp;
 };
 
 template <>
-void Gfunction_t<float>::get_Gradial_add(float* & rst, float* & Rij, size_t n, float Rs, float eta , float* tmp ){      
+void Gfunction_t<float>::get_Gradial_add(float* rst, float* Rij, size_t n, float Rs, float eta , float* tmp ){   
+     bool iftmp = false;
+     if (tmp == nullptr){
+          tmp = new float[n]();
+          iftmp = true;             
+     }        
      get_Gradial(tmp, Rij, n, Rs, eta);
-     cblas_saxpy((const int)n, 1.0, (const float*)tmp, 1, rst, 1);     
+     cblas_saxpy((const int)n, 1.0, (const float*)tmp, 1, rst, 1);   
+     if (iftmp) delete[] tmp;  
 };
 
 
 template <>
-void Gfunction_t<double>::get_Gangular_add(double* & rst, double* & Rij, double* & Rik, double*&  Rjk, size_t n, double eta, double zeta, double lambd , double* tmp){
+void Gfunction_t<double>::get_Gangular_add(double* rst, double* Rij, double* Rik, double* Rjk, size_t n, double eta, double zeta, double lambd , double* tmp){
+     bool iftmp = false;
+     if (tmp == nullptr){
+          tmp = new double[n]();
+          iftmp = true;             
+     }     
      get_Gangular(tmp, Rij, Rik, Rjk, n, eta, zeta, lambd);
      cblas_daxpy((const int)n, 1.0, (const double *)tmp, 1, rst, 1);
+     if (iftmp) delete[] tmp;
 };
 
 
 template <>
-void Gfunction_t<float>::get_Gangular_add(float* & rst, float* & Rij, float* & Rik, float*&  Rjk, size_t n, float eta, float zeta, float lambd , float* tmp ){
+void Gfunction_t<float>::get_Gangular_add(float* rst, float* Rij, float* Rik, float* Rjk, size_t n, float eta, float zeta, float lambd , float* tmp ){
+     bool iftmp = false;
+     if (tmp == nullptr){
+          tmp = new float[n]();
+          iftmp = true;             
+     }     
      get_Gangular(tmp, Rij, Rik, Rjk, n, eta, zeta, lambd);
      cblas_saxpy((const int)n, 1.0, (const float *)tmp, 1, rst, 1);
+     if (iftmp) delete[] tmp;
 };
 
 #endif

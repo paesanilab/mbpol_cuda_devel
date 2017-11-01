@@ -69,7 +69,7 @@ public:
      //=========================================================================
      
      // loading a default setting for mbpol NN model
-     void load_default_atom_id(idx_t **& _idxary, size_t & _size);
+     void load_default_atom_id(idx_t **& _idxary, size_t _size);
      
      
      
