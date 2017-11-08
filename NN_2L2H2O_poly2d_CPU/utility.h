@@ -160,17 +160,20 @@ int read2DArrayfile(T** & data, size_t& rows, size_t& cols, const char* file, in
           }          
 
           rows=mtx.size();
-          cols=mtx[0].size();
-          
-          init_mtx_in_mem<T>(data, rows, cols);  
-          
-          #ifdef _OPENMP
-          #pragma omp parallel for simd shared(data, mtx, rows)
-          #endif                                      
-          for(int ii=0; ii<rows; ii++){
-               copy(mtx[ii].begin(), mtx[ii].end(), data[ii]);       
-          }          
-
+          if (rows > 0){
+               cols=mtx[0].size();
+               
+               init_mtx_in_mem<T>(data, rows, cols);  
+               
+               #ifdef _OPENMP
+               #pragma omp parallel for simd shared(data, mtx, rows)
+               #endif                                      
+               for(int ii=0; ii<rows; ii++){
+                    copy(mtx[ii].begin(), mtx[ii].end(), data[ii]);       
+               }          
+          } else {
+               std::cout << " No Data is read from file as 2D array" << std::endl;
+          }
           mtx.clear();
           return 0;                    
     } catch (const std::exception& e) {
@@ -181,7 +184,7 @@ int read2DArrayfile(T** & data, size_t& rows, size_t& cols, const char* file, in
 
 
 template <typename T>
-int read2DArray_with_max_thredhold(T** & data, size_t& rows, size_t& cols, const char* file, int titleline=0, int thredhold_col=0, T thredhold_max=std::numeric_limits<T>::min()){
+int read2DArray_with_max_thredhold(T** & data, size_t& rows, size_t& cols, const char* file, int titleline=0, int thredhold_col=0, T thredhold_max=std::numeric_limits<T>::max()){
     try { 
           
           clearMemo<T>(data);
@@ -203,34 +206,36 @@ int read2DArray_with_max_thredhold(T** & data, size_t& rows, size_t& cols, const
                     onelinedata.push_back(d);           
                };               
                if (onelinedata.size()>0) {   
-                                                           
+                    int checkcol = onelinedata.size() ;                                                        
                     if ( thredhold_col >=0) {           
                          // when thredhold_index is non-negative, check the colum VS max
-                         if (onelinedata[thredhold_col] > thredhold_max) {
-                              continue;
-                         }
+                         checkcol = thredhold_col;
                     } else {
                          // when thredhold_index is negative, check the column from the end VS max
-                         if ( onelinedata[ onelinedata.size() + thredhold_col] > thredhold_max ) {
-                              continue;
-                         }                                             
+                         checkcol += thredhold_col;                                        
+                    }                         
+                    if (onelinedata[thredhold_col] > thredhold_max) {
+                         continue;  // If the data exceeds thredhold, ignore this line.
                     }
                     mtx.push_back(onelinedata);                               
                }                           
           }          
 
           rows=mtx.size();
-          cols=mtx[0].size();
-          
-          init_mtx_in_mem<T>(data, rows, cols);  
-          
-          #ifdef _OPENMP
-          #pragma omp parallel for simd shared(data, mtx, rows)
-          #endif                                      
-          for(int ii=0; ii<rows; ii++){
-               copy(mtx[ii].begin(), mtx[ii].end(), data[ii]);       
-          }          
-
+          if (rows > 0){
+               cols=mtx[0].size();
+               
+               init_mtx_in_mem<T>(data, rows, cols);  
+               
+               #ifdef _OPENMP
+               #pragma omp parallel for simd shared(data, mtx, rows)
+               #endif                                      
+               for(int ii=0; ii<rows; ii++){
+                    copy(mtx[ii].begin(), mtx[ii].end(), data[ii]);       
+               }          
+          } else {
+               std::cout << " No Data is read from file as 2D array" << std::endl;
+          }
           mtx.clear();
           return 0;                    
     } catch (const std::exception& e) {
