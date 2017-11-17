@@ -273,10 +273,10 @@ Gfunction_t(){
 
 
 // load distance matrix and filt out samples that exceed a maximum value
-void load_distfile(const char* _distfile, int _titleline=0, int _thredhold_col=0, T thredhold_max=std::numeric_limits<T>::min()){
+void load_distfile(const char* _distfile, int _titleline=0, int _thredhold_col=0, T thredhold_max=std::numeric_limits<T>::max()){
      timers.insert_random_timer( id, 0, "Read_distance_file");
      timers.timer_start(id);
-     if (thredhold_max > std::numeric_limits<T>::min() ) {
+     if (thredhold_max < std::numeric_limits<T>::max() ) {
           int ifread = read2DArray_with_max_thredhold(dist, ndimers, ndistcols, _distfile, _titleline, _thredhold_col, thredhold_max);     
      } else {     
           int ifread = read2DArrayfile(dist, ndimers, ndistcols, _distfile, _titleline);

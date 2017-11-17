@@ -294,6 +294,7 @@ size_t get_count_by_percent(size_t src_count, double percentage);
                                      
 template<typename T>
 void get_max_each_row(T*& rst,  T* src,  size_t src_rows, size_t src_cols, long int col_start=0, long int col_end=-1){ 
+          if(col_start < 0) col_start = src_cols + col_start;
           if(col_end < 0) col_end = src_cols + col_end ;  // change negative column index to positive        
           if(rst == nullptr) rst = new T[src_rows]();               
           #ifdef _OPENMP
@@ -321,6 +322,7 @@ void get_max_each_row<float>(float*& rst, float* src, size_t src_rows, size_t sr
 
 template<typename T>
 void norm_rows_in_mtx_by_col_vector(T* src_mtx, size_t src_rows, size_t src_cols, T* scale_vec, long int col_start=0, long int col_end=-1 ){
+     if(col_start < 0) col_start = src_cols + col_start;
      if(col_end < 0) col_end = src_cols + col_end ;  // change negative column index to positive
      // scale each row (from offset index) in a matrix by a column vector
      #ifdef _OPENMP
