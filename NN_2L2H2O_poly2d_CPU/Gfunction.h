@@ -360,7 +360,15 @@ void load_seq(const char* _seqfile){
 void make_G(){      
      timers.insert_random_timer(id3, 1 , "Gf_run_all");
      timers.timer_start(id3);     
-             
+     
+     
+     // G_param_start_idx, G_param_size and G_param_max_size store the start/size/max_size about the relationships for each type of atom
+     // E.g., for a "H" atom, the result G-fn should be in an order of [ --HH--, --HO--, --HHH-- ].
+     // There are 20 params for relation "HH", 30 for "HO", and 40 for "HHH".
+     // Then the total size are 20+30+40=90 floating points
+     // The start col index for HH is 0,  with size 20
+     //                     for HO is 20, with size 30   
+     //                    for HHH is 50, with size 40             
      for(auto it = GP.seq.begin(); it!=GP.seq.end(); it++) {
           // it->first  = name of atom type ;
           // it->second = vector<idx_t> ;   a vector saving the list of sequence order
@@ -387,8 +395,9 @@ void make_G(){
 
           //cout << " Dealing with atom : " << atom1 << " ... " << endl;          
           
+          // If atom1's type is asked for
           if( G_param_max_size.find(atom1_type) != G_param_max_size.end() ){
-
+                              
                T** g;          
                init_mtx_in_mem<T>(g, G_param_max_size[atom1_type] , ndimers);  // initialize in memory g[param, dimer_idx]
                
@@ -409,18 +418,18 @@ void make_G(){
                          idx_t idx_atom12 = idx_atom1_type*idx_atom2_type;
                          
 
-                         // Calculate RAD when it is needed
-                         if ( G_param_start_idx[atom1_type].find(idx_atom12) != G_param_start_idx[atom1_type].end() ) {                     
+                         // Calculate RAD when it is needed                         
+                         if ( G_param_start_idx[atom1_type].find(idx_atom12) != G_param_start_idx[atom1_type].end() ) {  // find atom1<->atom2 relation
                               //cout << atom1 << " - " << atom2 << endl;                    
-                              size_t nrow_params =  G_param_size[atom1_type][idx_atom12];
-                              unsigned int icol = colidx[idx_atom1][idx_atom2] ; // col index of the distance to retrieve
+                              size_t nrow_params =  G_param_size[atom1_type][idx_atom12]; // the size of this relation
+                              unsigned int icol = colidx[idx_atom1][idx_atom2] ;          // col index of the distance to retrieve
                          
                               T Rs, eta;                         
-                              int idx_g_atom12 = G_param_start_idx[atom1_type][idx_atom12];
+                              int idx_g_atom12 = G_param_start_idx[atom1_type][idx_atom12];  // starting index where to store these relations
 
                               
-                              for(int i=0 ; i< nrow_params; i++){          
-                                   Rs   = GP.params[atom1_type][idx_atom12][i][COL_RAD_RS];
+                              for(int i=0 ; i< nrow_params; i++){          // Loop all lines of parameters
+                                   Rs   = GP.params[atom1_type][idx_atom12][i][COL_RAD_RS];  
                                    eta  = GP.params[atom1_type][idx_atom12][i][COL_RAD_ETA] ;                                                                    
                                    timers.insert_random_timer(id, idx_atom12, "GRadial");
                                    timers.timer_start(id);
