@@ -488,7 +488,7 @@ void make_G(){
 
 
 
-void make_G(const char* _distfile, int _titleline, const char* _colidxfile, const char* _paramfile, const char* _ordfile, int _thredhold_col=0, T thredhold_max=std::numeric_limits<T>::min()){     
+void make_G(const char* _distfile, int _titleline, const char* _colidxfile, const char* _paramfile, const char* _ordfile, int _thredhold_col=0, T thredhold_max=std::numeric_limits<T>::max()){     
 
      load_distfile(_distfile, _titleline, _thredhold_col, thredhold_max);     
 
